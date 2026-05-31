@@ -1,7 +1,5 @@
 import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
-import { OPERATOR_MAP } from './operatorMap';
-
-const NO_VALUE_OPERATORS = new Set(['isNull', 'isNotNull'] as const);
+import { OPERATOR_MAP, NO_VALUE_OPERATORS } from '@/lib/constants';
 
 function validateRule(rule: Rule, schema: Schema): string[] {
   const errors: string[] = [];
@@ -21,7 +19,7 @@ function validateRule(rule: Rule, schema: Schema): string[] {
     );
   }
 
-  if (!NO_VALUE_OPERATORS.has(rule.operator as 'isNull' | 'isNotNull')) {
+  if (!NO_VALUE_OPERATORS.has(rule.operator)) {
     const isEmpty =
       rule.value === null ||
       rule.value === undefined ||
