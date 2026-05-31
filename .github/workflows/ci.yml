@@ -49,6 +49,10 @@ jobs:
       - name: Run Linter
         run: pnpm lint
 
-      # Step 6: Verify TypeScript and compilation builds cleanly
+      # Step 6: Verify TypeScript types with no emit (fast, explicit)
+      - name: Run Type Check
+        run: pnpm typecheck
+
+      # Step 7: Verify TypeScript and compilation builds cleanly
       - name: Build Next.js Application
         run: pnpm build
