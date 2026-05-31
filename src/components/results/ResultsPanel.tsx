@@ -15,26 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { RESULTS_PAGE_SIZE, RESULTS_COLUMNS } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { UserRecord } from "@/lib/mock/dataset"
-
-
-const PAGE_SIZE = 10
-
-const COLUMNS: { key: keyof UserRecord; label: string }[] = [
-  { key: 'id',         label: 'ID' },
-  { key: 'name',       label: 'Name' },
-  { key: 'age',        label: 'Age' },
-  { key: 'status',     label: 'Status' },
-  { key: 'isVerified', label: 'Verified' },
-  { key: 'createdAt',  label: 'Created' },
-]
 
 
 function SkeletonRow() {
   return (
     <TableRow>
-      {COLUMNS.map((col) => (
+      {RESULTS_COLUMNS.map((col) => (
         <TableCell key={col.key}>
           <div className="h-4 rounded bg-surface-container animate-pulse-loading" />
         </TableCell>
@@ -121,8 +110,8 @@ export function ResultsPanel() {
   }, [rows, sortKey, sortDir])
 
   const totalRows = sortedRows?.length ?? 0
-  const totalPages = Math.ceil(totalRows / PAGE_SIZE)
-  const pageRows = sortedRows?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? []
+  const totalPages = Math.ceil(totalRows / RESULTS_PAGE_SIZE)
+  const pageRows = sortedRows?.slice(page * RESULTS_PAGE_SIZE, (page + 1) * RESULTS_PAGE_SIZE) ?? []
 
   return (
     <div className="hidden md:flex w-[320px] lg:w-[400px] border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200">
@@ -156,7 +145,7 @@ export function ResultsPanel() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {COLUMNS.map((col) => (
+                  {RESULTS_COLUMNS.map((col) => (
                     <TableHead key={col.key}>{col.label}</TableHead>
                   ))}
                 </TableRow>
@@ -210,7 +199,7 @@ export function ResultsPanel() {
               <Table>
                 <TableHeader className="bg-surface-container-low border-b border-border">
                   <TableRow>
-                    {COLUMNS.map((col) => (
+                    {RESULTS_COLUMNS.map((col) => (
                       <TableHead
                         key={col.key}
                         className="cursor-pointer select-none hover:text-primary transition-colors"
@@ -232,7 +221,7 @@ export function ResultsPanel() {
                       key={row.id}
                       className="border-b border-border hover:bg-surface-bright transition-colors"
                     >
-                      {COLUMNS.map((col) => (
+                      {RESULTS_COLUMNS.map((col) => (
                         <TableCell key={col.key}>
                           <CellValue col={col.key} row={row} />
                         </TableCell>

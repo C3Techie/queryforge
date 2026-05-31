@@ -7,12 +7,15 @@ import { useQueryStore } from "@/store/queryStore"
 import { treeToSQL } from "@/lib/query-generator/treeToSQL"
 import { treeToMongoString } from "@/lib/query-generator/treeToMongo"
 import { treeToGraphQLString } from "@/lib/query-generator/treeToGraphQL"
+import {
+  SQL_KEYWORDS_REGEX,
+  SQL_STRINGS_REGEX,
+  SQL_NUMBERS_REGEX,
+  JSON_TOKEN_REGEX,
+  PREVIEW_TABS,
+  type PreviewTab,
+} from "@/lib/constants"
 import { cn } from "@/lib/utils"
-
-
-const SQL_KEYWORDS = /\b(SELECT|FROM|WHERE|AND|OR|LIKE|IN|BETWEEN|IS|NULL|NOT|REGEXP)\b/g;
-const SQL_STRINGS = /'[^']*'/g;
-const SQL_NUMBERS = /\b\d+(\.\d+)?\b/g;
 
 function highlightSQL(sql: string): React.ReactNode[] {
   const segments: React.ReactNode[] = [];
@@ -20,13 +23,13 @@ function highlightSQL(sql: string): React.ReactNode[] {
   let key = 0;
 
   while (remaining.length > 0) {
-    const kwMatch = SQL_KEYWORDS.exec(remaining);
-    const strMatch = SQL_STRINGS.exec(remaining);
-    const numMatch = SQL_NUMBERS.exec(remaining);
+    const kwMatch = SQL_KEYWORDS_REGEX.exec(remaining);
+    const strMatch = SQL_STRINGS_REGEX.exec(remaining);
+    const numMatch = SQL_NUMBERS_REGEX.exec(remaining);
 
-    SQL_KEYWORDS.lastIndex = 0;
-    SQL_STRINGS.lastIndex = 0;
-    SQL_NUMBERS.lastIndex = 0;
+    SQL_KEYWORDS_REGEX.lastIndex = 0;
+    SQL_STRINGS_REGEX.lastIndex = 0;
+    SQL_NUMBERS_REGEX.lastIndex = 0;
 
     const candidates = [
       kwMatch && { index: kwMatch.index, length: kwMatch[0].length, type: 'keyword', text: kwMatch[0] },
@@ -63,7 +66,8 @@ function highlightSQL(sql: string): React.ReactNode[] {
 
 function highlightJSON(text: string): React.ReactNode[] {
   const segments: React.ReactNode[] = [];
-  const TOKEN = /("(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\btrue\b|\bfalse\b|\bnull\b)|(\$\w+)/g;
+  // Clone the regex so we don't share lastIndex state across calls
+  const TOKEN = new RegExp(JSON_TOKEN_REGEX.source, JSON_TOKEN_REGEX.flags);
   let last = 0;
   let key = 0;
   let m: RegExpExecArray | null;
@@ -97,12 +101,9 @@ function highlightJSON(text: string): React.ReactNode[] {
 }
 
 
-type Tab = 'SQL' | 'MongoDB' | 'GraphQL';
-
-
 export function LivePreview() {
   const { queryTree, schema } = useQueryStore()
-  const [activeTab, setActiveTab] = useState<Tab>('SQL')
+  const [activeTab, setActiveTab] = useState<PreviewTab>('SQL')
   const [collapsed, setCollapsed] = useState(false)
 
   const sql = useMemo(
@@ -133,7 +134,7 @@ export function LivePreview() {
       {/* Tab bar */}
       <div className="flex border-b border-border px-4 bg-surface-bright items-center justify-between shrink-0 h-10">
         <div className="flex gap-4">
-          {(['SQL', 'MongoDB', 'GraphQL'] as Tab[]).map((tab) => (
+          {PREVIEW_TABS.map((tab) => (
             <button
               key={tab}
               type="button"

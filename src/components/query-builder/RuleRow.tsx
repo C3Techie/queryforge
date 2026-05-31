@@ -11,27 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { OPERATOR_MAP } from "@/lib/validation/operatorMap"
+import { OPERATOR_MAP, OPERATOR_LABELS } from "@/lib/constants"
 import { validateNode } from "@/lib/validation/validateNode"
 import type { Rule, Schema, Operator } from "@/types/query"
 import { cn } from "@/lib/utils"
-
-
-const OPERATOR_LABELS: Record<Operator, string> = {
-  equals:      "equals",
-  notEquals:   "not equals",
-  contains:    "contains",
-  startsWith:  "starts with",
-  greaterThan: "greater than",
-  lessThan:    "less than",
-  inArray:     "in list",
-  between:     "between",
-  regex:       "matches regex",
-  isNull:      "is null",
-  isNotNull:   "is not null",
-  before:      "before",
-  after:       "after",
-}
 
 interface RuleRowProps {
   rule: Rule
