@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileNav } from "@/components/layout/MobileNav";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -15,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QueryBuilder Pro",
+  title: "QueryForge",
   description: "Advanced Query Builder with Stitch Design System",
 };
 
@@ -30,7 +33,20 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="h-screen flex flex-col overflow-hidden bg-background text-on-background transition-colors duration-200">
+        <Header />
+        
+        {/* Workspace Shell */}
+        <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
+          <Sidebar className="hidden md:flex shrink-0" />
+          <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
+            {children}
+          </main>
+        </div>
+        
+        {/* Mobile Navigation */}
+        <MobileNav />
+      </body>
     </html>
   );
 }
