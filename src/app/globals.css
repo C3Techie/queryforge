@@ -53,6 +53,8 @@
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
   --color-surface-tint: var(--surface-tint);
+  --color-on-primary: var(--on-primary);
+  --color-on-secondary: var(--on-secondary);
   --color-primary-container: var(--primary-container);
   --color-on-primary-container: var(--on-primary-container);
   --color-inverse-primary: var(--inverse-primary);
@@ -225,6 +227,8 @@
   --border: var(--outline-variant);
   --input: var(--outline-variant);
   --ring: var(--primary);
+  --primary-foreground: var(--on-primary);
+  --secondary-foreground: var(--on-secondary);
   
   --radius: 0.5rem;
 }
@@ -289,6 +293,8 @@
   --border: var(--outline-variant);
   --input: var(--outline-variant);
   --ring: var(--primary);
+  --primary-foreground: var(--on-primary);
+  --secondary-foreground: var(--on-secondary);
 }
 
 @layer base {
