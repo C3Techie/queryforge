@@ -27,7 +27,7 @@ export default function Home() {
   // Sync dark class on mount
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark")
-    setIsDark(isDarkMode)
+    setTimeout(() => setIsDark(isDarkMode), 0)
   }, [])
 
   const toggleDarkMode = () => {
@@ -285,7 +285,7 @@ export default function Home() {
                 <div className="absolute inset-0 pointer-events-none code-shimmer opacity-20 group-hover:opacity-30 animate-shimmer transition-opacity duration-500"></div>
                 <pre className="font-code-md text-code-md text-on-surface leading-relaxed overflow-x-auto">
                   <code>
-                    <span className="text-primary font-bold">SELECT</span> * <span className="text-primary font-bold">FROM</span> Users <span className="text-primary font-bold">WHERE</span> name <span className="text-primary font-bold">LIKE</span> <span className="text-tertiary-container dark:text-tertiary-fixed font-semibold">'%John%'</span> <span className="text-primary font-bold">AND</span> age &gt; <span className="text-secondary font-bold">25</span>;
+                    <span className="text-primary font-bold">SELECT</span> * <span className="text-primary font-bold">FROM</span> Users <span className="text-primary font-bold">WHERE</span> name <span className="text-primary font-bold">LIKE</span> <span className="text-tertiary-container dark:text-tertiary-fixed font-semibold">&apos;%John%&apos;</span> <span className="text-primary font-bold">AND</span> age &gt; <span className="text-secondary font-bold">25</span>;
                   </code>
                 </pre>
               </div>
