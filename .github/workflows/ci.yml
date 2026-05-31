@@ -1,0 +1,54 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - dev
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    name: Lint and Build Sanity Check
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install and configure pnpm package manager
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9 # Matches modern pnpm projects
+
+      # Step 3: Setup Node.js and enable pnpm caching for faster runs
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      # Step 4: Install dependencies using frozen-lockfile for deterministic CI
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Step 5: Verify code style and lint rules
+      - name: Run Linter
+        run: pnpm lint
+
+      # Step 6: Verify TypeScript and compilation builds cleanly
+      - name: Build Next.js Application
+        run: pnpm build
