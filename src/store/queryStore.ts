@@ -3,10 +3,6 @@ import { immer } from 'zustand/middleware/immer';
 import { v4 as uuidv4 } from 'uuid';
 import type { Rule, RuleGroup, QueryNode, Schema } from '@/types/query';
 
-// ---------------------------------------------------------------------------
-// State shape
-// ---------------------------------------------------------------------------
-
 interface QueryState {
   queryTree: RuleGroup;
   schema: Schema | null;
@@ -22,9 +18,6 @@ interface QueryState {
   exportTree: () => RuleGroup;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeEmptyGroup(): RuleGroup {
   return { id: uuidv4(), type: 'group', logicalOperator: 'AND', children: [] };
@@ -34,11 +27,6 @@ function makeEmptyRule(): Rule {
   return { id: uuidv4(), type: 'rule', field: '', operator: 'equals', value: '' };
 }
 
-/**
- * Recursively walks the tree and calls `visitor` on every node.
- * The visitor receives the node and its parent group (null for root).
- * Return `true` from the visitor to stop traversal early.
- */
 function walkTree(
   node: QueryNode,
   parent: RuleGroup | null,
@@ -53,10 +41,6 @@ function walkTree(
   return false;
 }
 
-/**
- * Finds a group by ID and pushes a new child node into it.
- * Mutates the draft (called inside immer produce).
- */
 function addChildToGroup(root: RuleGroup, parentGroupId: string, child: QueryNode): void {
   walkTree(root, null, (node) => {
     if (node.type === 'group' && node.id === parentGroupId) {
@@ -66,10 +50,6 @@ function addChildToGroup(root: RuleGroup, parentGroupId: string, child: QueryNod
   });
 }
 
-/**
- * Finds a node by ID and merges `updates` into it.
- * Mutates the draft (called inside immer produce).
- */
 function applyUpdatesToNode(
   root: RuleGroup,
   nodeId: string,
@@ -83,11 +63,6 @@ function applyUpdatesToNode(
   });
 }
 
-/**
- * Removes a node by ID from its parent's children array.
- * Mutates the draft (called inside immer produce).
- * Returns true if the node was found and removed.
- */
 function removeNodeFromTree(root: RuleGroup, nodeId: string): boolean {
   let removed = false;
   walkTree(root, null, (node, parent) => {
@@ -102,10 +77,6 @@ function removeNodeFromTree(root: RuleGroup, nodeId: string): boolean {
   });
   return removed;
 }
-
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
 
 export const useQueryStore = create<QueryState>()(
   immer((set, get) => ({
