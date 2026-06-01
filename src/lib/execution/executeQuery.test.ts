@@ -118,10 +118,10 @@ describe('executeTree', () => {
 
   it('after filters date strings correctly', () => {
     const group = makeGroup({
-      children: [makeRule({ field: 'createdAt', operator: 'after', value: '2023-01-01' })],
+      children: [makeRule({ field: 'createdAt', operator: 'after', value: '2020-01-01' })],
     })
     const result = executeTree(group, data)
-    expect(result.every((r) => (r.createdAt as string) > '2023-01-01')).toBe(true)
+    expect(result.every((r) => (r.createdAt as string) > '2020-01-01')).toBe(true)
     expect(result.length).toBeGreaterThan(0)
   })
 
