@@ -42,3 +42,19 @@ export interface Schema {
   name: string;
   fields: SchemaField[];
 }
+
+
+export interface HistoryEntry {
+  id: string;
+  tree: RuleGroup;
+  timestamp: number;
+  schemaName?: string;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  tree: RuleGroup;
+  schemaName?: string;
+  createdAt: number;
+}

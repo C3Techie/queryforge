@@ -1,13 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Sun, Moon, Command, Upload, Download } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
+import { useQueryStore } from "@/store/queryStore"
+import { useToast } from "@/components/ui/toast"
 import { TOGGLE_DARK_MODE_EVENT } from "@/lib/constants"
 
 export function Header() {
@@ -15,6 +17,9 @@ export function Header() {
     () => typeof document !== "undefined" && document.documentElement.classList.contains("dark")
   )
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const { exportTree, importTree } = useQueryStore()
+  const { toast } = useToast()
 
   const applyDark = useCallback((nextDark: boolean) => {
     setIsDark(nextDark)
@@ -33,22 +38,70 @@ export function Header() {
     setShortcutsOpen((v) => !v)
   }, [])
 
+  // Export: serialize tree to JSON and trigger download
+  const handleExport = useCallback(() => {
+    const tree = exportTree()
+    const blob = new Blob([JSON.stringify(tree, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `queryforge-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [exportTree])
+
+  // Import: open file picker
+  const handleImportClick = useCallback(() => {
+    importInputRef.current?.click()
+  }, [])
+
+  const handleImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target?.result as string)
+          if (parsed?.type !== 'group' || !Array.isArray(parsed?.children)) {
+            toast('Invalid file — must be a QueryForge RuleGroup JSON.', 'error')
+            return
+          }
+          importTree(parsed)
+          toast('Query imported successfully.', 'success')
+        } catch {
+          toast('Could not parse file — invalid JSON.', 'error')
+        }
+      }
+      reader.readAsText(file)
+      e.target.value = ''
+    },
+    [importTree, toast]
+  )
+
   useEffect(() => {
     const handler = () => toggleDarkMode()
     window.addEventListener(TOGGLE_DARK_MODE_EVENT, handler)
     return () => window.removeEventListener(TOGGLE_DARK_MODE_EVENT, handler)
   }, [toggleDarkMode])
 
-  // Register global keyboard shortcuts
   useKeyboardShortcuts({ onToggleShortcutsModal: toggleShortcutsModal })
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-14 bg-surface dark:bg-surface-dim border-b border-border shadow-sm flex justify-between items-center px-4 md:px-6 z-50 transition-colors duration-200">
+      {/* Hidden file input for import */}
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={handleImportFile}
+        aria-hidden="true"
+      />
 
-        {/* Left Side: Brand and Mobile Navigation */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-surface dark:bg-surface-dim border-b border-border shadow-sm flex justify-between items-center px-4 md:px-6 z-50 transition-colors duration-200">
+        {/* Left Side */}
         <div className="flex items-center gap-2">
-          {/* Mobile Hamburger Drawer */}
           <Sheet>
             <SheetTrigger
               render={
@@ -67,29 +120,50 @@ export function Header() {
             </SheetContent>
           </Sheet>
 
-          {/* Logo / Brand Title */}
           <span className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg md:text-xl">
             QueryForge
           </span>
         </div>
 
-        {/* Right Side Actions */}
+        {/* Right Side */}
         <div className="flex items-center gap-2">
-          {/* Import Action */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleImportClick}
+            title="Import query from JSON file"
+            aria-label="Import query"
+            className="flex sm:hidden text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest h-8 w-8 rounded"
+          >
+            <Upload className="size-3.5" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
+            onClick={handleImportClick}
+            title="Import query from JSON file"
             className="hidden sm:flex font-label-caps text-label-caps text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest px-3 py-1.5 h-8 gap-1.5"
           >
             <Upload className="size-3.5" />
             <span>Import</span>
           </Button>
 
-          {/* Export Action */}
+          <Button
+            variant="default"
+            size="icon"
+            onClick={handleExport}
+            title="Export query as JSON file"
+            aria-label="Export query"
+            className="flex sm:hidden font-label-caps text-label-caps bg-primary text-primary-foreground hover:bg-primary-container hover:text-on-primary-container h-8 w-8 rounded"
+          >
+            <Download className="size-3.5" />
+          </Button>
           <Button
             variant="default"
             size="sm"
-            className="font-label-caps text-label-caps bg-primary text-primary-foreground hover:bg-primary-container hover:text-on-primary-container px-3 py-1.5 h-8 gap-1.5"
+            onClick={handleExport}
+            title="Export query as JSON file"
+            className="hidden sm:flex font-label-caps text-label-caps bg-primary text-primary-foreground hover:bg-primary-container hover:text-on-primary-container px-3 py-1.5 h-8 gap-1.5"
           >
             <Download className="size-3.5" />
             <span>Export</span>
@@ -124,7 +198,6 @@ export function Header() {
         </div>
       </header>
 
-      {/* Shortcuts modal */}
       <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </>
   )

@@ -50,8 +50,10 @@ export type PreviewTab = typeof PREVIEW_TABS[number];
 
 export const RUN_QUERY_EVENT = 'queryforge:run-query' as const;
 export const TOGGLE_DARK_MODE_EVENT = 'queryforge:toggle-dark-mode' as const;
+export const OPEN_PRESETS_EVENT = 'queryforge:open-presets' as const;
 
 export const MAX_HISTORY = 20;
+export const MAX_PRESETS = 50;
 
 export interface ShortcutEntry {
   action: string;
@@ -65,7 +67,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
   { action: 'Delete selected node',  keys: ['Delete'],        available: true  },
   { action: 'Toggle Dark Mode',      keys: ['Ctrl', 'D'],     available: true  },
   { action: 'Open this help modal',  keys: ['?'],             available: true  },
-  { action: 'Save as preset',        keys: ['Ctrl', 'S'],     available: false },
+  { action: 'Save as preset',        keys: ['Ctrl', 'S'],     available: true  },
   { action: 'Import query',          keys: ['Ctrl', 'I'],     available: false },
   { action: 'Toggle Builder / JSON', keys: ['Ctrl', 'B'],     available: false },
 ];
