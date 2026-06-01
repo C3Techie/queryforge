@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 interface RuleRowProps {
   rule: Rule
   schema: Schema
+  dragHandle?: React.ReactNode
   onUpdate: (id: string, updates: Partial<Rule>) => void
   onRemove: (id: string) => void
 }
@@ -169,7 +170,7 @@ function ValueInput({
   }
 }
 
-function RuleRowInner({ rule, schema, onUpdate, onRemove }: RuleRowProps) {
+function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowProps) {
   const errors = useMemo(
     () => (rule.field ? validateNode(rule, schema) : []),
     [rule, schema]
@@ -213,8 +214,10 @@ function RuleRowInner({ rule, schema, onUpdate, onRemove }: RuleRowProps) {
     >
       {/* Controls row */}
       <div className="flex flex-col md:flex-row md:items-center gap-2">
-        {/* Drag handle */}
-        <GripVertical className="hidden md:block size-4 text-muted-foreground cursor-move shrink-0" />
+        {/* Drag handle — injected from SortableItem */}
+        {dragHandle ?? (
+          <GripVertical className="hidden md:block size-4 text-muted-foreground cursor-move shrink-0" />
+        )}
 
         {/* Field selector */}
         <Select value={rule.field} onValueChange={handleFieldChange}>

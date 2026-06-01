@@ -14,6 +14,7 @@ interface QueryState {
   updateNode: (nodeId: string, updates: Partial<Rule | RuleGroup>) => void;
   removeNode: (nodeId: string) => void;
   setLogicalOperator: (groupId: string, op: 'AND' | 'OR') => void;
+  reorderChildren: (parentGroupId: string, fromIndex: number, toIndex: number) => void;
   importTree: (tree: RuleGroup) => void;
   exportTree: () => RuleGroup;
 }
@@ -121,6 +122,25 @@ export const useQueryStore = create<QueryState>()(
     setLogicalOperator(groupId, op) {
       set((state) => {
         applyUpdatesToNode(state.queryTree, groupId, { logicalOperator: op });
+      });
+    },
+
+    reorderChildren(parentGroupId, fromIndex, toIndex) {
+      set((state) => {
+        walkTree(state.queryTree, null, (node) => {
+          if (node.type === 'group' && node.id === parentGroupId) {
+            const children = node.children;
+            if (
+              fromIndex < 0 ||
+              toIndex < 0 ||
+              fromIndex >= children.length ||
+              toIndex >= children.length
+            ) return true;
+            const [moved] = children.splice(fromIndex, 1);
+            children.splice(toIndex, 0, moved);
+            return true;
+          }
+        });
       });
     },
 

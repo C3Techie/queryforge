@@ -19,6 +19,7 @@ export default function Home() {
     updateNode,
     removeNode,
     setLogicalOperator,
+    reorderChildren,
   } = useQueryStore()
 
   // Set default schema on mount
@@ -46,6 +47,11 @@ export default function Home() {
   const handleSetLogicalOperator = useCallback(
     (groupId: string, op: "AND" | "OR") => setLogicalOperator(groupId, op),
     [setLogicalOperator]
+  )
+  const handleReorderChildren = useCallback(
+    (parentGroupId: string, fromIndex: number, toIndex: number) =>
+      reorderChildren(parentGroupId, fromIndex, toIndex),
+    [reorderChildren]
   )
 
   return (
@@ -84,6 +90,7 @@ export default function Home() {
                   onAddRule={handleAddRule}
                   onAddGroup={handleAddGroup}
                   onSetLogicalOperator={handleSetLogicalOperator}
+                  onReorderChildren={handleReorderChildren}
                 />
               ) : (
                 <div className="flex items-center justify-center h-32 text-muted-foreground text-body-sm">
