@@ -88,6 +88,7 @@ export default function Home() {
 
   const isValid = React.useMemo(() => {
     if (!schema) return true
+    if (queryTree.children.length === 0) return true
     return validateNode(queryTree, schema, schemas).length === 0
   }, [queryTree, schema])
 
