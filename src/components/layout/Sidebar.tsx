@@ -30,7 +30,6 @@ export function Sidebar({
   const [isSchemaExpanded, setIsSchemaExpanded] = useState(true)
   const [activeSchema, setActiveSchema] = useState<"users" | "products">("users")
 
-  // Listen for the global Ctrl+S event to open presets panel then focus input
   useEffect(() => {
     const handler = (e: Event) => {
       const isFocusSignal = (e as CustomEvent).detail?.focus === true
@@ -54,7 +53,7 @@ export function Sidebar({
       )}
       {...props}
     >
-      {/* ── Sub-panel views ─────────────────────────────────────────────── */}
+      {/* ── Sub-panel views ─── */}
       {view !== "main" && (
         <>
           {/* Back button */}
@@ -80,7 +79,7 @@ export function Sidebar({
         </>
       )}
 
-      {/* ── Main navigation view ────────────────────────────────────────── */}
+      {/* ── Main navigation view ─── */}
       {view === "main" && (
         <>
           {/* Header */}

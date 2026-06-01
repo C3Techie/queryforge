@@ -127,7 +127,6 @@ export function Header() {
 
         {/* Right Side */}
         <div className="flex items-center gap-2">
-          {/* Import — icon only on mobile, label from sm+ */}
           <Button
             variant="ghost"
             size="icon"
@@ -149,7 +148,6 @@ export function Header() {
             <span>Import</span>
           </Button>
 
-          {/* Export — icon only on mobile, label from sm+ */}
           <Button
             variant="default"
             size="icon"
