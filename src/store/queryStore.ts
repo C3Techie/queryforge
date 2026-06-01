@@ -2,16 +2,19 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { current } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
-import type { Rule, RuleGroup, QueryNode, Schema } from '@/types/query';
-import { MAX_HISTORY } from '@/lib/constants';
+import type { Rule, RuleGroup, QueryNode, Schema, HistoryEntry, Preset } from '@/types/query';
+import { MAX_HISTORY, MAX_PRESETS } from '@/lib/constants';
+
 
 interface QueryState {
   queryTree: RuleGroup;
   schema: Schema | null;
-  history: RuleGroup[];
+  undoStack: RuleGroup[];
+  queryHistory: HistoryEntry[];
+  presets: Preset[];
   selectedNodeId: string | null;
 
-  // Actions
+  // Core tree actions
   setSchema: (schema: Schema) => void;
   addRule: (parentGroupId: string) => void;
   addGroup: (parentGroupId: string) => void;
@@ -23,7 +26,18 @@ interface QueryState {
   importTree: (tree: RuleGroup) => void;
   exportTree: () => RuleGroup;
   setSelectedNodeId: (id: string | null) => void;
+
+  // Query history actions
+  addHistoryEntry: () => void;
+  clearHistory: () => void;
+  restoreFromHistory: (id: string) => void;
+
+  // Preset actions
+  savePreset: (name: string) => void;
+  loadPreset: (id: string) => void;
+  deletePreset: (id: string) => void;
 }
+
 
 function makeEmptyGroup(): RuleGroup {
   return { id: uuidv4(), type: 'group', logicalOperator: 'AND', children: [] };
@@ -84,53 +98,62 @@ function removeNodeFromTree(root: RuleGroup, nodeId: string): boolean {
   return removed;
 }
 
-function pushHistory(state: { history: RuleGroup[]; queryTree: RuleGroup }): void {
-  state.history.push(current(state.queryTree));
-  if (state.history.length > MAX_HISTORY) {
-    state.history.splice(0, state.history.length - MAX_HISTORY);
+function pushUndoStack(state: { undoStack: RuleGroup[]; queryTree: RuleGroup }): void {
+  state.undoStack.push(current(state.queryTree));
+  if (state.undoStack.length > MAX_HISTORY) {
+    state.undoStack.splice(0, state.undoStack.length - MAX_HISTORY);
   }
+}
+
+function isValidTree(tree: unknown): tree is RuleGroup {
+  return (
+    typeof tree === 'object' &&
+    tree !== null &&
+    (tree as RuleGroup).type === 'group' &&
+    Array.isArray((tree as RuleGroup).children)
+  );
 }
 
 export const useQueryStore = create<QueryState>()(
   immer((set, get) => ({
     queryTree: makeEmptyGroup(),
     schema: null,
-    history: [],
+    undoStack: [],
+    queryHistory: [],
+    presets: [],
     selectedNodeId: null,
 
+
     setSchema(schema) {
-      set((state) => {
-        state.schema = schema;
-      });
+      set((state) => { state.schema = schema; });
     },
+
 
     addRule(parentGroupId) {
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         addChildToGroup(state.queryTree, parentGroupId, makeEmptyRule());
       });
     },
 
     addGroup(parentGroupId) {
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         addChildToGroup(state.queryTree, parentGroupId, makeEmptyGroup());
       });
     },
 
     updateNode(nodeId, updates) {
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         applyUpdatesToNode(state.queryTree, nodeId, updates);
       });
     },
 
     removeNode(nodeId) {
       set((state) => {
-        pushHistory(state);
-        if (state.selectedNodeId === nodeId) {
-          state.selectedNodeId = null;
-        }
+        pushUndoStack(state);
+        if (state.selectedNodeId === nodeId) state.selectedNodeId = null;
         if (state.queryTree.id === nodeId) {
           state.queryTree = makeEmptyGroup();
           return;
@@ -141,22 +164,20 @@ export const useQueryStore = create<QueryState>()(
 
     setLogicalOperator(groupId, op) {
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         applyUpdatesToNode(state.queryTree, groupId, { logicalOperator: op });
       });
     },
 
     reorderChildren(parentGroupId, fromIndex, toIndex) {
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         walkTree(state.queryTree, null, (node) => {
           if (node.type === 'group' && node.id === parentGroupId) {
             const children = node.children;
             if (
-              fromIndex < 0 ||
-              toIndex < 0 ||
-              fromIndex >= children.length ||
-              toIndex >= children.length
+              fromIndex < 0 || toIndex < 0 ||
+              fromIndex >= children.length || toIndex >= children.length
             ) return true;
             const [moved] = children.splice(fromIndex, 1);
             children.splice(toIndex, 0, moved);
@@ -168,15 +189,15 @@ export const useQueryStore = create<QueryState>()(
 
     undo() {
       set((state) => {
-        if (state.history.length === 0) return;
-        const prev = state.history.pop()!;
-        state.queryTree = prev;
+        if (state.undoStack.length === 0) return;
+        state.queryTree = state.undoStack.pop()!;
       });
     },
 
     importTree(tree) {
+      if (!isValidTree(tree)) return;
       set((state) => {
-        pushHistory(state);
+        pushUndoStack(state);
         state.queryTree = tree;
       });
     },
@@ -186,8 +207,70 @@ export const useQueryStore = create<QueryState>()(
     },
 
     setSelectedNodeId(id) {
+      set((state) => { state.selectedNodeId = id; });
+    },
+
+
+    addHistoryEntry() {
       set((state) => {
-        state.selectedNodeId = id;
+        const entry: HistoryEntry = {
+          id: uuidv4(),
+          tree: current(state.queryTree),
+          timestamp: Date.now(),
+          schemaName: state.schema?.name,
+        };
+        state.queryHistory.unshift(entry); // newest first
+        if (state.queryHistory.length > MAX_HISTORY) {
+          state.queryHistory.splice(MAX_HISTORY);
+        }
+      });
+    },
+
+    clearHistory() {
+      set((state) => { state.queryHistory = []; });
+    },
+
+    restoreFromHistory(id) {
+      const entry = get().queryHistory.find((h) => h.id === id);
+      if (!entry) return;
+      get().importTree(entry.tree);
+    },
+
+
+    savePreset(name) {
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      set((state) => {
+        // Prevent duplicate names
+        const exists = state.presets.some(
+          (p) => p.name.toLowerCase() === trimmed.toLowerCase()
+        );
+        if (exists) return;
+
+        const preset: Preset = {
+          id: uuidv4(),
+          name: trimmed,
+          tree: current(state.queryTree),
+          schemaName: state.schema?.name,
+          createdAt: Date.now(),
+        };
+        state.presets.unshift(preset); // newest first
+        if (state.presets.length > MAX_PRESETS) {
+          state.presets.splice(MAX_PRESETS);
+        }
+      });
+    },
+
+    loadPreset(id) {
+      const preset = get().presets.find((p) => p.id === id);
+      if (!preset) return;
+      get().importTree(preset.tree);
+    },
+
+    deletePreset(id) {
+      set((state) => {
+        const idx = state.presets.findIndex((p) => p.id === id);
+        if (idx !== -1) state.presets.splice(idx, 1);
       });
     },
   }))

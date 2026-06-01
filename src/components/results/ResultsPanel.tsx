@@ -68,7 +68,7 @@ function CellValue({ col, row }: { col: keyof UserRecord; row: UserRecord }) {
 type SortDir = 'asc' | 'desc'
 
 export function ResultsPanel() {
-  const { queryTree, schema } = useQueryStore()
+  const { queryTree, schema, addHistoryEntry } = useQueryStore()
 
   const [rows, setRows] = useState<UserRecord[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -79,6 +79,7 @@ export function ResultsPanel() {
   const handleRun = useCallback(async () => {
     setLoading(true)
     setPage(0)
+    addHistoryEntry()
     await new Promise((r) => setTimeout(r, 300))
     const result = runQuery(
       queryTree,
@@ -86,7 +87,7 @@ export function ResultsPanel() {
     )
     setRows(result.rows as unknown as UserRecord[])
     setLoading(false)
-  }, [queryTree])
+  }, [queryTree, addHistoryEntry])
 
   useEffect(() => {
     const handler = () => { void handleRun() }

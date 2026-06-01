@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNavWrapper } from "@/components/layout/MobileNavWrapper";
 import { MobileTabProvider } from "@/lib/mobileTabContext";
+import { ToastProvider } from "@/components/ui/toast";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -36,18 +37,20 @@ export default function RootLayout({
     >
       <body className="h-screen flex flex-col overflow-hidden bg-background text-on-background transition-colors duration-200">
         <MobileTabProvider>
-          <Header />
+          <ToastProvider>
+            <Header />
 
-          {/* Workspace Shell */}
-          <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
-            <Sidebar className="hidden md:flex shrink-0" />
-            <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
-              {children}
-            </main>
-          </div>
+            {/* Workspace Shell */}
+            <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
+              <Sidebar className="hidden md:flex shrink-0" />
+              <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
+                {children}
+              </main>
+            </div>
 
-          {/* Mobile Navigation */}
-          <MobileNavWrapper />
+            {/* Mobile Navigation */}
+            <MobileNavWrapper />
+          </ToastProvider>
         </MobileTabProvider>
       </body>
     </html>
