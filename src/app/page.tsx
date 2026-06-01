@@ -79,14 +79,14 @@ export default function Home() {
 
       {/* Upper area: Center Panel & Right Panel */}
       <div className={cn(
-        "overflow-hidden min-h-0",
-        activeTab === "preview" ? "hidden md:flex md:flex-1" : "flex flex-1"
+        "flex flex-col lg:flex-row overflow-hidden min-h-0",
+        activeTab === "preview" ? "hidden lg:flex lg:flex-1" : "flex flex-1"
       )}>
 
         {/* Center Panel */}
         <div className={cn(
-          "flex-1 flex-col overflow-y-auto bg-background transition-colors duration-200",
-          activeTab === "builder" ? "flex" : "hidden md:flex"
+          "flex-1 flex-col overflow-y-auto bg-background transition-colors duration-200 min-w-0",
+          activeTab === "builder" ? "flex" : "hidden lg:flex"
         )}>
 
           {/* Canvas header */}
@@ -182,7 +182,7 @@ export default function Home() {
             ) : (
               <div className="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm min-h-full overflow-auto no-scrollbar relative">
                 {schema ? (
-                  <div className="min-w-max pb-20 md:pb-0">
+                  <div className="min-w-max pb-20 lg:pb-0">
                     <QueryNodeRenderer
                       node={queryTree}
                       schema={schema}
@@ -206,7 +206,7 @@ export default function Home() {
                     dispatchRunQuery()
                     setActiveTab("results")
                   }}
-                  className="md:hidden fixed bottom-20 right-4 rounded-full size-12 bg-primary text-primary-foreground shadow-lg flex items-center justify-center cursor-pointer hover:bg-primary-container hover:text-on-primary-container z-50 animate-slide-down-fade"
+                  className="lg:hidden fixed bottom-20 right-4 rounded-full size-12 bg-primary text-primary-foreground shadow-lg flex items-center justify-center cursor-pointer hover:bg-primary-container hover:text-on-primary-container z-50 animate-slide-down-fade"
                   aria-label="Run Query"
                 >
                   <Play className="size-5 fill-current" />
@@ -218,7 +218,7 @@ export default function Home() {
 
         {/* Right Panel */}
         <div className={cn(
-          activeTab === "results" ? "flex flex-1 min-w-0 md:flex-none" : "hidden md:flex"
+          activeTab === "results" ? "flex flex-1 min-w-0 lg:flex-none lg:w-[400px]" : "hidden lg:flex lg:w-[400px]"
         )}>
           <ResultsPanel />
         </div>
@@ -228,8 +228,8 @@ export default function Home() {
       {/* Bottom Dock */}
       <div className={cn(
         activeTab === "preview"
-          ? "flex flex-1 flex-col md:flex-none md:h-48"
-          : "hidden md:flex md:flex-col"
+          ? "flex flex-1 flex-col lg:flex-none lg:h-48"
+          : "hidden lg:flex lg:flex-col"
       )}>
         <LivePreview />
       </div>

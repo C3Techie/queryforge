@@ -122,7 +122,7 @@ export function ResultsPanel() {
   const pageRows = sortedRows?.slice(page * RESULTS_PAGE_SIZE, (page + 1) * RESULTS_PAGE_SIZE) ?? []
 
   return (
-    <div className="flex flex-1 md:flex-none w-full md:w-[320px] lg:w-[400px] max-w-full border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200 overflow-hidden">
+    <div className="flex flex-1 w-full border-l border-border bg-surface dark:bg-surface-dim flex-col transition-colors duration-200 overflow-hidden">
 
       {/* Header — shrink-0 so it never grows, flex-wrap so button stays on screen */}
       <div className="p-4 border-b border-border flex justify-between items-center gap-2 bg-surface-bright shrink-0 flex-wrap">

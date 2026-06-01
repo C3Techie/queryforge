@@ -35,7 +35,7 @@ function SortableItemInner({ id, children }: SortableItemProps) {
       type="button"
       aria-label="Drag to reorder"
       className={cn(
-        "hidden md:flex items-center justify-center",
+        "hidden lg:flex items-center justify-center",
         "p-0.5 rounded text-muted-foreground cursor-grab active:cursor-grabbing",
         "hover:text-on-surface transition-colors shrink-0",
         "touch-none"

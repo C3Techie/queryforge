@@ -41,8 +41,8 @@ export default function RootLayout({
             <Header />
 
             {/* Workspace Shell */}
-            <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
-              <Sidebar className="hidden md:flex shrink-0" />
+            <div className="flex flex-1 overflow-hidden pt-14 pb-16 lg:pb-0 relative">
+              <Sidebar className="hidden lg:flex shrink-0" />
               <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
                 {children}
               </main>

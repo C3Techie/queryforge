@@ -220,10 +220,10 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
       )}
     >
       {/* Controls row */}
-      <div className="flex flex-col md:flex-row md:items-center gap-2">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
         {/* Drag handle — injected from SortableItem */}
         {dragHandle ?? (
-          <GripVertical className="hidden md:block size-4 text-muted-foreground cursor-move shrink-0" />
+          <GripVertical className="hidden lg:block size-4 text-muted-foreground cursor-move shrink-0" />
         )}
 
         {/* Field selector */}

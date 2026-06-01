@@ -48,7 +48,7 @@ export function Sidebar({
     <aside
       className={cn(
         "w-full h-full flex flex-col shrink-0 transition-colors duration-200 overflow-hidden",
-        !isMobileDrawer && "w-[260px] bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant dark:border-outline shadow-sm",
+        !isMobileDrawer && "w-[260px] bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant dark:border-outline shadow-sm hidden lg:flex",
         className
       )}
       {...props}
@@ -96,7 +96,7 @@ export function Sidebar({
           <div className="px-4 pb-3 border-b border-outline-variant">
             <Button
               variant="default"
-              className="w-full bg-primary text-primary-foreground py-2 rounded font-label-caps text-label-caps shadow-sm hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full bg-primary !text-on-primary py-2 rounded font-label-caps text-label-caps shadow-sm hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2"
             >
               <Plus className="size-4" />
               <span>New Query</span>

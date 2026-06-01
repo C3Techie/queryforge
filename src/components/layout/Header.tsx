@@ -115,7 +115,7 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest cursor-pointer h-9 w-9 rounded-full"
+                  className="lg:hidden text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest cursor-pointer h-9 w-9 rounded-full"
                   aria-label="Open Sidebar Menu"
                 />
               }
@@ -130,7 +130,7 @@ export function Header() {
           {/* Logo — click to refresh page, on mobile also resets to builder tab */}
           <a
             href="/"
-            className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg md:text-xl cursor-pointer hover:opacity-80 transition-opacity"
+            className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg lg:text-xl cursor-pointer hover:opacity-80 transition-opacity"
           >
             QueryForge
           </a>
