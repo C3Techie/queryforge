@@ -8,6 +8,7 @@ import { datasetMap } from "@/lib/mock/dataset"
 import { runQuery } from "@/lib/execution/executeQuery"
 import { schemas } from "@/lib/mock/schema"
 import { getReferencedFields, getFieldMetadata } from "@/lib/schemaUtils"
+import { validateNode } from "@/lib/validation/validateNode"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -24,7 +25,6 @@ import { cn } from "@/lib/utils"
 
 function getColumns(schema: { fields: { name: string; type: string }[] } | null) {
   if (!schema) return []
-  // Show up to 6 fields — always include id first if present
   const fields = schema.fields
   const idField = fields.find(f => f.name === 'id')
   const rest = fields.filter(f => f.name !== 'id').slice(0, 5)
@@ -111,6 +111,12 @@ export function ResultsPanel() {
     return [...baseCols, ...relationCols]
   }, [schema, queryTree])
 
+  const isQueryValid = useMemo(() => {
+    if (!schema) return false
+    if (queryTree.children.length === 0) return true
+    return validateNode(queryTree, schema, schemas).length === 0
+  }, [queryTree, schema])
+
   // Reset results when schema changes
   useEffect(() => {
     setRows(null)
@@ -129,7 +135,7 @@ export function ResultsPanel() {
     setPage(0)
     addHistoryEntry()
     await new Promise((r) => setTimeout(r, 300))
-    const result = runQuery(queryTree, activeDataset, schema, datasetMap, schemas)
+    const result = runQuery(queryTree, activeDataset, schema ?? undefined, datasetMap, schemas)
     setRows(result.rows)
     setLoading(false)
   }, [queryTree, addHistoryEntry, activeDataset, schema])
@@ -183,11 +189,11 @@ export function ResultsPanel() {
         <button
           type="button"
           onClick={handleRun}
-          disabled={loading || !schema}
+          disabled={loading || !schema || !isQueryValid}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-caps text-label-caps shadow-sm transition-colors cursor-pointer",
             "bg-primary text-primary-foreground hover:bg-primary-container hover:text-on-primary-container",
-            "disabled:opacity-50 disabled:pointer-events-none"
+            "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed"
           )}
         >
           <Play className="size-3.5" />

@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils"
 import { TOGGLE_JSON_VIEW_EVENT, RUN_QUERY_EVENT } from "@/lib/constants"
 import { dispatchRunQuery } from "@/lib/events"
 import type { Rule, RuleGroup } from "@/types/query"
+import { motion, AnimatePresence } from "framer-motion"
+import { validateNode } from "@/lib/validation/validateNode"
+import { schemas } from "@/lib/mock/schema"
 
 export default function Home() {
   const {
@@ -27,9 +30,18 @@ export default function Home() {
     reorderChildren,
     setSelectedNodeId,
     exportTree,
+    importTree,
   } = useQueryStore()
 
   const [jsonView, setJsonView] = useState(false)
+  const [jsonText, setJsonText] = useState("")
+
+  // Sync jsonText whenever queryTree changes or jsonView is enabled
+  useEffect(() => {
+    if (jsonView) {
+      setJsonText(JSON.stringify(queryTree, null, 2))
+    }
+  }, [queryTree, jsonView])
 
   // Set default schema on mount if none is active
   useEffect(() => {
@@ -73,6 +85,11 @@ export default function Home() {
   )
 
   const { activeTab, setActiveTab } = useMobileTab()
+
+  const isValid = React.useMemo(() => {
+    if (!schema) return true
+    return validateNode(queryTree, schema, schemas).length === 0
+  }, [queryTree, schema])
 
   const jsonTextRef = React.useRef<HTMLTextAreaElement>(null)
 
@@ -129,92 +146,113 @@ export default function Home() {
 
           {/* Root group card — click background to deselect */}
           <div
-            className="px-container-padding pb-container-padding flex-1 min-w-0"
+            className="px-container-padding pb-container-padding flex-1 min-w-0 flex flex-col min-h-0"
             onClick={(e) => {
               if (e.target === e.currentTarget) setSelectedNodeId(null)
             }}
           >
-            {jsonView ? (
-              /* JSON view — editable query tree */
-              <div className="bg-surface border border-outline-variant rounded-lg shadow-sm overflow-hidden min-h-full flex flex-col">
-                <div className="p-3 border-b border-border bg-surface-bright flex items-center justify-between">
-                  <span className="font-label-caps text-label-caps text-muted-foreground uppercase tracking-wider">
-                    Edit Query Tree JSON
-                  </span>
-                  <div className="flex gap-2 items-center">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        const ta = jsonTextRef.current;
-                        if (ta) {
-                          try {
-                            const parsed = JSON.parse(ta.value);
-                            useQueryStore.getState().importTree(parsed);
-                          } catch (err) {
-                            alert("Invalid JSON");
-                          }
-                        }
-                      }}
-                      className="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors cursor-pointer"
-                    >
-                      Apply
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const json = JSON.stringify(exportTree(), null, 2)
-                        navigator.clipboard.writeText(json).then(() => {}).catch(() => {})
-                        if (jsonTextRef.current) {
-                          jsonTextRef.current.value = json;
-                        }
-                      }}
-                      className="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors cursor-pointer"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-                <textarea 
-                  ref={jsonTextRef}
-                  className="flex-1 p-4 font-code-sm text-code-sm text-on-surface bg-surface-dim leading-relaxed w-full outline-none resize-none no-scrollbar"
-                  defaultValue={JSON.stringify(queryTree, null, 2)}
-                  spellCheck={false}
-                />
-              </div>
-            ) : (
-              <div className="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm min-h-full overflow-auto no-scrollbar relative">
-                {schema ? (
-                  <div className="min-w-max pb-20 lg:pb-0">
-                    <QueryNodeRenderer
-                      node={queryTree}
-                      schema={schema}
-                      onUpdate={handleUpdate}
-                      onRemove={handleRemove}
-                      onAddRule={handleAddRule}
-                      onAddGroup={handleAddGroup}
-                      onSetLogicalOperator={handleSetLogicalOperator}
-                      onReorderChildren={handleReorderChildren}
-                    />
-                  </div>
+            <div className="bg-surface border border-outline-variant rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden relative min-h-[400px]">
+              <AnimatePresence mode="wait">
+                {jsonView ? (
+                  <motion.div
+                    key="json"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex-1 flex flex-col min-h-0 h-full"
+                  >
+                    {/* JSON view — editable query tree */}
+                    <div className="flex-1 flex flex-col min-h-0 h-full">
+                      <div className="p-3 border-b border-border bg-surface-bright flex items-center justify-between shrink-0">
+                        <span className="font-label-caps text-label-caps text-muted-foreground uppercase tracking-wider">
+                          Edit Query Tree JSON
+                        </span>
+                        <div className="flex gap-2 items-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try {
+                                const parsed = JSON.parse(jsonText)
+                                importTree(parsed)
+                              } catch (err) {
+                                alert("Invalid JSON format")
+                              }
+                            }}
+                            className="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors cursor-pointer"
+                          >
+                            Apply
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(jsonText).then(() => {
+                                alert("JSON copied to clipboard!")
+                              }).catch(() => {
+                                alert("Failed to copy JSON")
+                              })
+                            }}
+                            className="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors cursor-pointer"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        value={jsonText}
+                        onChange={(e) => setJsonText(e.target.value)}
+                        className="flex-1 p-4 font-code-sm text-code-sm text-on-surface bg-surface-dim leading-relaxed w-full outline-none resize-none no-scrollbar min-h-0"
+                        spellCheck={false}
+                      />
+                    </div>
+                  </motion.div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-muted-foreground text-body-sm">
-                    Loading schema…
-                  </div>
+                  <motion.div
+                    key="builder"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex-1 overflow-auto no-scrollbar p-4 relative h-full flex flex-col"
+                  >
+                    {schema ? (
+                      <div className="min-w-max pb-20 lg:pb-0">
+                        <QueryNodeRenderer
+                          node={queryTree}
+                          schema={schema}
+                          onUpdate={handleUpdate}
+                          onRemove={handleRemove}
+                          onAddRule={handleAddRule}
+                          onAddGroup={handleAddGroup}
+                          onSetLogicalOperator={handleSetLogicalOperator}
+                          onReorderChildren={handleReorderChildren}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-32 text-muted-foreground text-body-sm">
+                        Loading schema…
+                      </div>
+                    )}
+                    {/* Mobile Floating Action Button to Run Query */}
+                    <button
+                      type="button"
+                      disabled={!isValid}
+                      onClick={() => {
+                        dispatchRunQuery()
+                        setActiveTab("results")
+                      }}
+                      className={cn(
+                        "lg:hidden fixed bottom-20 right-4 rounded-full size-12 bg-primary text-primary-foreground shadow-lg flex items-center justify-center cursor-pointer transition-all z-50",
+                        "hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50 disabled:pointer-events-none"
+                      )}
+                      aria-label="Run Query"
+                    >
+                      <Play className="size-5 fill-current" />
+                    </button>
+                  </motion.div>
                 )}
-                {/* Mobile Floating Action Button to Run Query */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    dispatchRunQuery()
-                    setActiveTab("results")
-                  }}
-                  className="lg:hidden fixed bottom-20 right-4 rounded-full size-12 bg-primary text-primary-foreground shadow-lg flex items-center justify-center cursor-pointer hover:bg-primary-container hover:text-on-primary-container z-50 animate-slide-down-fade"
-                  aria-label="Run Query"
-                >
-                  <Play className="size-5 fill-current" />
-                </button>
-              </div>
-            )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useMemo, useCallback } from "react"
 import { GripVertical, X } from "lucide-react"
+import { motion } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -210,12 +211,17 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   )
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       onClick={() => setSelectedNodeId(rule.id)}
       className={cn(
-        "group animate-slide-down-fade",
+        "group",
         "flex flex-col gap-1",
-        "bg-surface-bright border rounded p-2 transition-all duration-200",
+        "bg-surface-bright border rounded p-2 transition-[box-shadow,border-color] duration-200",
         "hover:bg-surface-container-high hover:shadow-[0_-2px_0_0_theme(colors.primary)]",
         "cursor-pointer",
         isSelected && "ring-2 ring-primary ring-offset-1",
@@ -290,7 +296,7 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 

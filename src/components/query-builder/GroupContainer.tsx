@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useState, useCallback } from "react"
 import { ChevronRight, PlusCircle, FolderPlus, Trash2, Plus } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   DndContext,
   closestCenter,
@@ -182,77 +183,81 @@ function GroupContainerInner({
       </div>
 
       {/* Children container — animated collapse */}
-      <div
-        className={cn(
-          "pl-6 flex flex-col gap-3 relative z-10 overflow-hidden transition-all duration-300",
-          isCollapsed
-            ? "max-h-0 opacity-0 pointer-events-none"
-            : "max-h-[2000px] opacity-100"
-        )}
-      >
-        {group.children.length === 0 ? (
-          <div className="border border-dashed border-border rounded p-4 text-center text-muted-foreground text-body-sm">
-            Add a condition or nested group
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+      <AnimatePresence initial={false}>
+        {!isCollapsed && (
+          <motion.div
+            key="children"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="pl-6 flex flex-col gap-3 relative z-10 overflow-hidden"
           >
-            <SortableContext items={childIds} strategy={verticalListSortingStrategy}>
-              {group.children.map((child) => (
-                <SortableItem key={child.id} id={child.id}>
-                  {(handle) => (
-                    <QueryNodeRenderer
-                      node={child}
-                      schema={schema}
-                      dragHandle={handle}
-                      onUpdate={onUpdate}
-                      onRemove={onRemove}
-                      onAddRule={onAddRule}
-                      onAddGroup={onAddGroup}
-                      onSetLogicalOperator={onSetLogicalOperator}
-                      onReorderChildren={onReorderChildren}
-                    />
-                  )}
-                </SortableItem>
-              ))}
-            </SortableContext>
+            {group.children.length === 0 ? (
+              <div className="border border-dashed border-border rounded p-4 text-center text-muted-foreground text-body-sm">
+                Add a condition or nested group
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={childIds} strategy={verticalListSortingStrategy}>
+                  {group.children.map((child) => (
+                    <SortableItem key={child.id} id={child.id}>
+                      {(handle) => (
+                        <QueryNodeRenderer
+                          node={child}
+                          schema={schema}
+                          dragHandle={handle}
+                          onUpdate={onUpdate}
+                          onRemove={onRemove}
+                          onAddRule={onAddRule}
+                          onAddGroup={onAddGroup}
+                          onSetLogicalOperator={onSetLogicalOperator}
+                          onReorderChildren={onReorderChildren}
+                        />
+                      )}
+                    </SortableItem>
+                  ))}
+                </SortableContext>
 
-            {/* DragOverlay */}
-            <DragOverlay>
-              {activeNode ? (
-                <div className="shadow-lg rounded opacity-95 bg-surface border border-primary">
-                  <QueryNodeRenderer
-                    node={activeNode}
-                    schema={schema}
-                    onUpdate={onUpdate}
-                    onRemove={onRemove}
-                    onAddRule={onAddRule}
-                    onAddGroup={onAddGroup}
-                    onSetLogicalOperator={onSetLogicalOperator}
-                    onReorderChildren={onReorderChildren}
-                  />
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+                {/* DragOverlay */}
+                <DragOverlay>
+                  {activeNode ? (
+                    <div className="shadow-lg rounded opacity-95 bg-surface border border-primary">
+                      <QueryNodeRenderer
+                        node={activeNode}
+                        schema={schema}
+                        onUpdate={onUpdate}
+                        onRemove={onRemove}
+                        onAddRule={onAddRule}
+                        onAddGroup={onAddGroup}
+                        onSetLogicalOperator={onSetLogicalOperator}
+                        onReorderChildren={onReorderChildren}
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+
+            {/* Add rule footer */}
+            <div className="mt-1 pt-3 border-t border-border flex justify-center">
+              <button
+                type="button"
+                onClick={handleAddRule}
+                className="text-primary hover:text-primary-container font-label-caps text-label-caps flex items-center gap-1 transition-colors"
+              >
+                <Plus className="size-3.5" />
+                Add Rule
+              </button>
+            </div>
+          </motion.div>
         )}
-
-        {/* Add rule footer */}
-        <div className="mt-1 pt-3 border-t border-border flex justify-center">
-          <button
-            type="button"
-            onClick={handleAddRule}
-            className="text-primary hover:text-primary-container font-label-caps text-label-caps flex items-center gap-1 transition-colors"
-          >
-            <Plus className="size-3.5" />
-            Add Rule
-          </button>
-        </div>
-      </div>
+      </AnimatePresence>
     </div>
   )
 }

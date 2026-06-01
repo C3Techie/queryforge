@@ -30,7 +30,7 @@ export function Sidebar({
     openPresetsWithFocus ? "presets" : "main"
   )
   const [isSchemaExpanded, setIsSchemaExpanded] = useState(true)
-  const { schema: activeSchema, setSchema } = useQueryStore()
+  const { schema: activeSchema, setSchema, clearQuery } = useQueryStore()
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -98,7 +98,8 @@ export function Sidebar({
           <div className="px-4 pb-3 border-b border-outline-variant">
             <Button
               variant="default"
-              className="w-full bg-primary !text-on-primary py-2 rounded font-label-caps text-label-caps shadow-sm hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2"
+              onClick={clearQuery}
+              className="w-full bg-primary !text-on-primary py-2 rounded font-label-caps text-label-caps shadow-sm hover:opacity-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus className="size-4" />
               <span>New Query</span>
