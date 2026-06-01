@@ -30,9 +30,6 @@ import { SortableItem } from "./SortableItem"
 import type { Rule, RuleGroup, Schema } from "@/types/query"
 import { cn } from "@/lib/utils"
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
 
 interface GroupContainerProps {
   group: RuleGroup
@@ -47,10 +44,7 @@ interface GroupContainerProps {
   onReorderChildren: (parentGroupId: string, fromIndex: number, toIndex: number) => void
 }
 
-// ---------------------------------------------------------------------------
 // GroupContainer
-// ---------------------------------------------------------------------------
-
 function GroupContainerInner({
   group,
   schema,
@@ -66,8 +60,6 @@ function GroupContainerInner({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
 
-  // DnD sensors — require 8px movement before activating to avoid
-  // accidental drags when clicking inputs/selects
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
@@ -98,8 +90,6 @@ function GroupContainerInner({
       const toIndex = ids.indexOf(String(over.id))
       if (fromIndex === -1 || toIndex === -1) return
 
-      // Optimistic local reorder via arrayMove (for DnD Kit's animation),
-      // then commit to the store
       arrayMove(group.children, fromIndex, toIndex) // reference only — store owns truth
       onReorderChildren(group.id, fromIndex, toIndex)
     },
