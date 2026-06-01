@@ -7,6 +7,8 @@ import { usersSchema } from "@/lib/mock/schema"
 import { QueryNodeRenderer } from "@/components/query-builder/QueryNodeRenderer"
 import { LivePreview } from "@/components/preview/LivePreview"
 import { ResultsPanel } from "@/components/results/ResultsPanel"
+import { useMobileTab } from "@/lib/mobileTabContext"
+import { cn } from "@/lib/utils"
 import type { Rule, RuleGroup } from "@/types/query"
 
 export default function Home() {
@@ -20,6 +22,7 @@ export default function Home() {
     removeNode,
     setLogicalOperator,
     reorderChildren,
+    setSelectedNodeId,
   } = useQueryStore()
 
   // Set default schema on mount
@@ -54,14 +57,19 @@ export default function Home() {
     [reorderChildren]
   )
 
+  const { activeTab } = useMobileTab()
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
 
       {/* Upper area: Center Panel & Right Panel */}
       <div className="flex-1 flex overflow-hidden min-h-0">
 
-        {/* Center Panel — Query Builder Canvas */}
-        <div className="flex-1 flex flex-col overflow-y-auto bg-background transition-colors duration-200">
+        {/* Center Panel */}
+        <div className={cn(
+          "flex-1 flex-col overflow-y-auto bg-background transition-colors duration-200",
+          activeTab === "builder" ? "flex" : "hidden md:flex"
+        )}>
 
           {/* Canvas header */}
           <div className="flex justify-between items-center px-container-padding pt-6 pb-4 shrink-0">
@@ -79,7 +87,12 @@ export default function Home() {
           </div>
 
           {/* Root group card */}
-          <div className="px-container-padding pb-container-padding flex-1">
+          <div
+            className="px-container-padding pb-container-padding flex-1"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedNodeId(null)
+            }}
+          >
             <div className="bg-surface border border-outline-variant rounded-lg p-4 shadow-sm min-h-full">
               {schema ? (
                 <QueryNodeRenderer
@@ -101,13 +114,23 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right Panel — Query Results */}
-        <ResultsPanel />
+        {/* Right Panel */}
+        <div className={cn(
+          activeTab === "results" ? "flex flex-1 md:flex-none" : "hidden md:flex"
+        )}>
+          <ResultsPanel />
+        </div>
 
       </div>
 
-      {/* Bottom Dock — Live Preview */}
-      <LivePreview />
+      {/* Bottom Dock */}
+      <div className={cn(
+        activeTab === "preview"
+          ? "flex flex-1 flex-col md:flex-none md:h-48"
+          : "hidden md:flex md:flex-col"
+      )}>
+        <LivePreview />
+      </div>
 
     </div>
   )

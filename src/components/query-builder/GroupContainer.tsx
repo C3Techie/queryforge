@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { QueryNodeRenderer } from "./QueryNodeRenderer"
 import { SortableItem } from "./SortableItem"
+import { useQueryStore } from "@/store/queryStore"
 import type { Rule, RuleGroup, Schema } from "@/types/query"
 import { cn } from "@/lib/utils"
 
@@ -59,6 +60,8 @@ function GroupContainerInner({
 }: GroupContainerProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const { selectedNodeId, setSelectedNodeId } = useQueryStore()
+  const isSelected = selectedNodeId === group.id
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -90,7 +93,7 @@ function GroupContainerInner({
       const toIndex = ids.indexOf(String(over.id))
       if (fromIndex === -1 || toIndex === -1) return
 
-      arrayMove(group.children, fromIndex, toIndex) // reference only — store owns truth
+      arrayMove(group.children, fromIndex, toIndex)
       onReorderChildren(group.id, fromIndex, toIndex)
     },
     [group.id, group.children, onReorderChildren]
@@ -111,8 +114,14 @@ function GroupContainerInner({
       )}
     >
       {/* Group header */}
-      <div className="flex items-center gap-2 mb-3 z-10 relative bg-background w-max pr-2">
-        {/* External drag handle (when this group is itself sortable) */}
+      <div
+        onClick={() => setSelectedNodeId(group.id)}
+        className={cn(
+          "flex items-center flex-wrap gap-2 mb-3 z-10 relative bg-background w-max pr-2 rounded cursor-pointer",
+          isSelected && "ring-2 ring-primary ring-offset-1"
+        )}
+      >
+        {/* External drag handle */}
         {dragHandle}
 
         {/* Collapse toggle */}
@@ -212,7 +221,7 @@ function GroupContainerInner({
               ))}
             </SortableContext>
 
-            {/* DragOverlay — renders a floating copy of the dragged item */}
+            {/* DragOverlay */}
             <DragOverlay>
               {activeNode ? (
                 <div className="shadow-lg rounded opacity-95 bg-surface border border-primary">

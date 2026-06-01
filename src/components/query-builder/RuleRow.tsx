@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select"
 import { OPERATOR_MAP, OPERATOR_LABELS } from "@/lib/constants"
 import { validateNode } from "@/lib/validation/validateNode"
+import { useQueryStore } from "@/store/queryStore"
 import type { Rule, Schema, Operator } from "@/types/query"
 import { cn } from "@/lib/utils"
 
@@ -171,6 +172,9 @@ function ValueInput({
 }
 
 function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowProps) {
+  const { selectedNodeId, setSelectedNodeId } = useQueryStore()
+  const isSelected = selectedNodeId === rule.id
+
   const errors = useMemo(
     () => (rule.field ? validateNode(rule, schema) : []),
     [rule, schema]
@@ -204,11 +208,14 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
 
   return (
     <div
+      onClick={() => setSelectedNodeId(rule.id)}
       className={cn(
         "group animate-slide-down-fade",
         "flex flex-col gap-1",
         "bg-surface-bright border rounded p-2 transition-all duration-200",
         "hover:bg-surface-container-high hover:shadow-[0_-2px_0_0_theme(colors.primary)]",
+        "cursor-pointer",
+        isSelected && "ring-2 ring-primary ring-offset-1",
         hasErrors ? "border-destructive" : "border-border"
       )}
     >

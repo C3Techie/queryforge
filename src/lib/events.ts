@@ -1,5 +1,4 @@
-export const RUN_QUERY_EVENT = 'queryforge:run-query' as const;
-export const TOGGLE_DARK_MODE_EVENT = 'queryforge:toggle-dark-mode' as const;
+import { RUN_QUERY_EVENT, TOGGLE_DARK_MODE_EVENT } from '@/lib/constants';
 
 export function dispatchRunQuery(): void {
   window.dispatchEvent(new CustomEvent(RUN_QUERY_EVENT));

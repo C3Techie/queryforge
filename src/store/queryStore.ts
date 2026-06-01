@@ -1,11 +1,15 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { current } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import type { Rule, RuleGroup, QueryNode, Schema } from '@/types/query';
+import { MAX_HISTORY } from '@/lib/constants';
 
 interface QueryState {
   queryTree: RuleGroup;
   schema: Schema | null;
+  history: RuleGroup[];
+  selectedNodeId: string | null;
 
   // Actions
   setSchema: (schema: Schema) => void;
@@ -15,10 +19,11 @@ interface QueryState {
   removeNode: (nodeId: string) => void;
   setLogicalOperator: (groupId: string, op: 'AND' | 'OR') => void;
   reorderChildren: (parentGroupId: string, fromIndex: number, toIndex: number) => void;
+  undo: () => void;
   importTree: (tree: RuleGroup) => void;
   exportTree: () => RuleGroup;
+  setSelectedNodeId: (id: string | null) => void;
 }
-
 
 function makeEmptyGroup(): RuleGroup {
   return { id: uuidv4(), type: 'group', logicalOperator: 'AND', children: [] };
@@ -79,10 +84,19 @@ function removeNodeFromTree(root: RuleGroup, nodeId: string): boolean {
   return removed;
 }
 
+function pushHistory(state: { history: RuleGroup[]; queryTree: RuleGroup }): void {
+  state.history.push(current(state.queryTree));
+  if (state.history.length > MAX_HISTORY) {
+    state.history.splice(0, state.history.length - MAX_HISTORY);
+  }
+}
+
 export const useQueryStore = create<QueryState>()(
   immer((set, get) => ({
     queryTree: makeEmptyGroup(),
     schema: null,
+    history: [],
+    selectedNodeId: null,
 
     setSchema(schema) {
       set((state) => {
@@ -92,25 +106,31 @@ export const useQueryStore = create<QueryState>()(
 
     addRule(parentGroupId) {
       set((state) => {
+        pushHistory(state);
         addChildToGroup(state.queryTree, parentGroupId, makeEmptyRule());
       });
     },
 
     addGroup(parentGroupId) {
       set((state) => {
+        pushHistory(state);
         addChildToGroup(state.queryTree, parentGroupId, makeEmptyGroup());
       });
     },
 
     updateNode(nodeId, updates) {
       set((state) => {
+        pushHistory(state);
         applyUpdatesToNode(state.queryTree, nodeId, updates);
       });
     },
 
     removeNode(nodeId) {
       set((state) => {
-        // If the root itself is targeted, replace it with a fresh empty group.
+        pushHistory(state);
+        if (state.selectedNodeId === nodeId) {
+          state.selectedNodeId = null;
+        }
         if (state.queryTree.id === nodeId) {
           state.queryTree = makeEmptyGroup();
           return;
@@ -121,12 +141,14 @@ export const useQueryStore = create<QueryState>()(
 
     setLogicalOperator(groupId, op) {
       set((state) => {
+        pushHistory(state);
         applyUpdatesToNode(state.queryTree, groupId, { logicalOperator: op });
       });
     },
 
     reorderChildren(parentGroupId, fromIndex, toIndex) {
       set((state) => {
+        pushHistory(state);
         walkTree(state.queryTree, null, (node) => {
           if (node.type === 'group' && node.id === parentGroupId) {
             const children = node.children;
@@ -144,14 +166,29 @@ export const useQueryStore = create<QueryState>()(
       });
     },
 
+    undo() {
+      set((state) => {
+        if (state.history.length === 0) return;
+        const prev = state.history.pop()!;
+        state.queryTree = prev;
+      });
+    },
+
     importTree(tree) {
       set((state) => {
+        pushHistory(state);
         state.queryTree = tree;
       });
     },
 
     exportTree() {
       return structuredClone(get().queryTree);
+    },
+
+    setSelectedNodeId(id) {
+      set((state) => {
+        state.selectedNodeId = id;
+      });
     },
   }))
 );

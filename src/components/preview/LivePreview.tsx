@@ -128,7 +128,7 @@ export function LivePreview() {
     <div
       className={cn(
         "border-t border-border bg-surface-container-lowest shrink-0 flex flex-col transition-all duration-300",
-        collapsed ? "h-10" : "h-48"
+        collapsed ? "h-10" : "h-full md:h-48"
       )}
     >
       {/* Tab bar */}
