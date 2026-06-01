@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { treeToSQL } from './treeToSQL'
 import { makeRule, makeGroup } from '@/test/helpers'
-import { usersSchema } from '@/lib/mock/schema'
+import { usersSchema, ordersSchema } from '@/lib/mock/schema'
 
 describe('treeToSQL', () => {
   it('returns SELECT without WHERE for empty root group', () => {
@@ -160,5 +160,14 @@ describe('treeToSQL', () => {
       children: [makeRule({ field: 'name', operator: 'equals', value: "O'Brien" })],
     })
     expect(treeToSQL(root, usersSchema)).toContain("'O''Brien'")
+  })
+
+  it('generates JOIN clause for relational fields', () => {
+    const root = makeGroup({
+      children: [makeRule({ field: 'customer.status', operator: 'equals', value: 'active' })],
+    })
+    const sql = treeToSQL(root, ordersSchema)
+    expect(sql).toContain('JOIN `Users` AS `customer` ON `Orders`.`customerId` = `customer`.`id`')
+    expect(sql).toContain("WHERE `customer`.`status` = 'active'")
   })
 })

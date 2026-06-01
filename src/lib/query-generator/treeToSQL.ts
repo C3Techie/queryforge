@@ -1,5 +1,6 @@
-import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
-
+import type { QueryNode, Rule, RuleGroup, Schema, Operator } from '@/types/query';
+import { getFieldMetadata, getReferencedFields } from '@/lib/schemaUtils';
+import { schemas as defaultSchemas } from '@/lib/mock/schema';
 
 function escapeString(value: string): string {
   return value.replace(/'/g, "''");
@@ -12,10 +13,11 @@ function formatValue(value: unknown, fieldType: string): string {
   return `'${escapeString(String(value))}'`;
 }
 
-
-function ruleToSQL(rule: Rule, schema: Schema): string {
-  const field = `\`${rule.field}\``;
-  const schemaField = schema.fields.find((f) => f.name === rule.field);
+function ruleToSQL(rule: Rule, schema: Schema, schemas: Schema[]): string {
+  const field = rule.field.includes('.')
+    ? rule.field.split('.').map(p => `\`${p}\``).join('.')
+    : `\`${rule.field}\``;
+  const schemaField = getFieldMetadata(rule.field, schema, schemas);
   const fieldType = schemaField?.type ?? 'string';
   const rawValue = rule.value;
 
@@ -73,25 +75,50 @@ function ruleToSQL(rule: Rule, schema: Schema): string {
   }
 }
 
-
-function groupToSQL(group: RuleGroup, schema: Schema, isRoot: boolean): string {
+function groupToSQL(group: RuleGroup, schema: Schema, schemas: Schema[], isRoot: boolean): string {
   if (group.children.length === 0) return '1=1';
 
-  const parts = group.children.map((child) => nodeToSQL(child, schema, false));
+  const parts = group.children.map((child) => nodeToSQL(child, schema, schemas, false));
   const joined = parts.join(` ${group.logicalOperator} `);
   return isRoot ? joined : `(${joined})`;
 }
 
-function nodeToSQL(node: QueryNode, schema: Schema, isRoot: boolean): string {
-  if (node.type === 'rule') return ruleToSQL(node, schema);
-  return groupToSQL(node, schema, isRoot);
+function nodeToSQL(node: QueryNode, schema: Schema, schemas: Schema[], isRoot: boolean): string {
+  if (node.type === 'rule') return ruleToSQL(node, schema, schemas);
+  return groupToSQL(node, schema, schemas, isRoot);
 }
 
-
-export function treeToSQL(root: RuleGroup, schema: Schema): string {
+export function treeToSQL(
+  root: RuleGroup,
+  schema: Schema,
+  schemas: Schema[] = defaultSchemas
+): string {
   if (root.children.length === 0) {
     return `SELECT * FROM \`${schema.name}\`;`;
   }
-  const where = groupToSQL(root, schema, true);
-  return `SELECT *\nFROM \`${schema.name}\`\nWHERE ${where};`;
+  
+  const where = groupToSQL(root, schema, schemas, true);
+  
+  // Find referenced relation fields and generate JOINs
+  const refFields = getReferencedFields(root);
+  const joins: string[] = [];
+  const relationsSeen = new Set<string>();
+
+  for (const fieldPath of refFields) {
+    if (fieldPath.includes('.')) {
+      const relationName = fieldPath.split('.')[0];
+      if (!relationsSeen.has(relationName)) {
+        relationsSeen.add(relationName);
+        const relation = schema.relations?.find(r => r.name === relationName);
+        if (relation) {
+          joins.push(`JOIN \`${relation.targetSchema}\` AS \`${relationName}\` ON \`${schema.name}\`.\`${relation.localField}\` = \`${relationName}\`.\`${relation.foreignField}\``);
+        }
+      }
+    }
+  }
+
+  const joinClause = joins.length > 0 ? `\n${joins.join('\n')}` : '';
+  const selectPrefix = joins.length > 0 ? `\`${schema.name}\`.*` : '*';
+
+  return `SELECT ${selectPrefix}\nFROM \`${schema.name}\`${joinClause}\nWHERE ${where};`;
 }

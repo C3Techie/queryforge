@@ -16,6 +16,8 @@ import { validateNode } from "@/lib/validation/validateNode"
 import { useQueryStore } from "@/store/queryStore"
 import type { Rule, Schema, Operator } from "@/types/query"
 import { cn } from "@/lib/utils"
+import { schemas } from "@/lib/mock/schema"
+import { getSelectableFields, getFieldMetadata } from "@/lib/schemaUtils"
 
 interface RuleRowProps {
   rule: Rule
@@ -35,7 +37,7 @@ function ValueInput({
   schema: Schema
   onUpdate: (id: string, updates: Partial<Rule>) => void
 }) {
-  const schemaField = schema.fields.find((f) => f.name === rule.field)
+  const schemaField = getFieldMetadata(rule.field, schema, schemas)
   const noValue = rule.operator === "isNull" || rule.operator === "isNotNull"
 
   if (!schemaField || noValue) return null
@@ -176,13 +178,14 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   const isSelected = selectedNodeId === rule.id
 
   const errors = useMemo(
-    () => (rule.field ? validateNode(rule, schema) : []),
+    () => (rule.field ? validateNode(rule, schema, schemas) : []),
     [rule, schema]
   )
 
   const hasErrors = errors.length > 0
 
-  const schemaField = schema.fields.find((f) => f.name === rule.field)
+  const selectableFields = useMemo(() => getSelectableFields(schema, schemas), [schema])
+  const schemaField = useMemo(() => getFieldMetadata(rule.field, schema, schemas), [rule.field, schema])
   const allowedOperators = schemaField
     ? OPERATOR_MAP[schemaField.type]
     : (Object.keys(OPERATOR_LABELS) as Operator[])
@@ -190,12 +193,12 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   const handleFieldChange = useCallback(
     (field: string | null) => {
       if (!field) return
-      const newSchemaField = schema.fields.find((f) => f.name === field)
+      const newSchemaField = getFieldMetadata(field, schema, schemas)
       const newAllowed = newSchemaField ? OPERATOR_MAP[newSchemaField.type] : []
       const newOperator = newAllowed[0] ?? "equals"
       onUpdate(rule.id, { field, operator: newOperator, value: "" })
     },
-    [rule.id, schema.fields, onUpdate]
+    [rule.id, schema, onUpdate]
   )
 
   const handleOperatorChange = useCallback(
@@ -228,13 +231,13 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
 
         {/* Field selector */}
         <Select value={rule.field} onValueChange={handleFieldChange}>
-          <SelectTrigger className="w-full md:w-32 h-8 shrink-0">
+          <SelectTrigger className="w-full md:w-52 h-8 shrink-0">
             <SelectValue placeholder="Field…" />
           </SelectTrigger>
           <SelectContent>
-            {schema.fields.map((f) => (
-              <SelectItem key={f.name} value={f.name}>
-                {f.name}
+            {selectableFields.map((f) => (
+              <SelectItem key={f.path} value={f.path}>
+                {f.label}
               </SelectItem>
             ))}
           </SelectContent>

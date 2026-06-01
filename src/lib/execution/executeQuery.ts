@@ -1,14 +1,74 @@
-import type { QueryNode, Rule, RuleGroup } from '@/types/query';
-
+import type { QueryNode, Rule, RuleGroup, Schema, Operator } from '@/types/query';
+import { getReferencedFields } from '@/lib/schemaUtils';
+import { schemas as defaultSchemas } from '@/lib/mock/schema';
+import { datasetMap as defaultDb } from '@/lib/mock/dataset';
 
 type DataRow = Record<string, unknown>;
 
+function guessSchema(data: DataRow[], schemas: Schema[]): Schema {
+  if (data.length === 0) return schemas[0];
+  const firstRowKeys = Object.keys(data[0]);
+  let bestSchema = schemas[0];
+  let maxMatches = -1;
+  
+  for (const s of schemas) {
+    const matches = s.fields.filter(f => firstRowKeys.includes(f.name)).length;
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      bestSchema = s;
+    }
+  }
+  return bestSchema;
+}
 
-function evaluateRule(rule: Rule, row: DataRow): boolean {
-  const rawField = row[rule.field];
-  const rawValue = rule.value;
+export function resolveFieldValue(
+  row: DataRow,
+  fieldPath: string,
+  schema: Schema,
+  db: Record<string, DataRow[]>,
+  schemas: Schema[]
+): unknown {
+  if (!fieldPath) return undefined;
 
-  switch (rule.operator) {
+  const parts = fieldPath.split('.');
+  if (parts.length === 1) {
+    return row[parts[0]];
+  }
+
+  const relationName = parts[0];
+  const relation = schema.relations?.find((r) => r.name === relationName);
+  if (!relation) return undefined;
+
+  const nextSchema = schemas.find((s) => s.name === relation.targetSchema);
+  if (!nextSchema) return undefined;
+
+  const targetDataset = db[relation.targetSchema];
+  if (!targetDataset) return undefined;
+
+  const localVal = row[relation.localField];
+  if (localVal === undefined || localVal === null) return undefined;
+
+  const matches = targetDataset.filter(
+    (targetRow) => String(targetRow[relation.foreignField]) === String(localVal)
+  );
+
+  const subPath = parts.slice(1).join('.');
+  if (matches.length === 0) return undefined;
+
+  const isOneToMany = relation.localField === 'id';
+
+  if (isOneToMany) {
+    const results = matches
+      .map((m) => resolveFieldValue(m, subPath, nextSchema, db, schemas))
+      .filter((v) => v !== undefined);
+    return results;
+  } else {
+    return resolveFieldValue(matches[0], subPath, nextSchema, db, schemas);
+  }
+}
+
+function evaluateSingleValue(operator: Operator, rawField: unknown, rawValue: unknown): boolean {
+  switch (operator) {
     case 'isNull':
       return rawField === null || rawField === undefined;
 
@@ -16,7 +76,6 @@ function evaluateRule(rule: Rule, row: DataRow): boolean {
       return rawField !== null && rawField !== undefined;
 
     case 'equals':
-      // loose comparison to handle string "true"/"false" vs boolean
       return String(rawField) == String(rawValue);
 
     case 'notEquals':
@@ -44,7 +103,6 @@ function evaluateRule(rule: Rule, row: DataRow): boolean {
     case 'between': {
       const parts = Array.isArray(rawValue) ? rawValue : [rawValue, rawValue];
       const fieldNum = Number(rawField);
-      // Try numeric first, fall back to date string comparison
       if (!isNaN(fieldNum)) {
         return fieldNum >= Number(parts[0]) && fieldNum <= Number(parts[1]);
       }
@@ -70,12 +128,34 @@ function evaluateRule(rule: Rule, row: DataRow): boolean {
   }
 }
 
+function evaluateRule(
+  rule: Rule,
+  row: DataRow,
+  schema: Schema,
+  db: Record<string, DataRow[]>,
+  schemas: Schema[]
+): boolean {
+  const resolvedValue = resolveFieldValue(row, rule.field, schema, db, schemas);
 
-export function executeTree(node: QueryNode, data: DataRow[]): DataRow[] {
+  if (Array.isArray(resolvedValue)) {
+    return resolvedValue.some((val) => evaluateSingleValue(rule.operator, val, rule.value));
+  }
+
+  return evaluateSingleValue(rule.operator, resolvedValue, rule.value);
+}
+
+export function executeTree(
+  node: QueryNode,
+  data: DataRow[],
+  schema?: Schema,
+  db: Record<string, DataRow[]> = defaultDb,
+  schemas: Schema[] = defaultSchemas
+): DataRow[] {
+  const activeSchema = schema ?? guessSchema(data, schemas);
+
   if (node.type === 'rule') {
-    // Skip incomplete rules (no field selected)
     if (!node.field) return data;
-    return data.filter((row) => evaluateRule(node, row));
+    return data.filter((row) => evaluateRule(node, row, activeSchema, db, schemas));
   }
 
   // RuleGroup
@@ -86,14 +166,14 @@ export function executeTree(node: QueryNode, data: DataRow[]): DataRow[] {
   if (group.logicalOperator === 'AND') {
     let result = data;
     for (const child of group.children) {
-      result = executeTree(child, result);
+      result = executeTree(child, result, activeSchema, db, schemas);
     }
     return result;
   } else {
     const seen = new Set<unknown>();
     const result: DataRow[] = [];
     for (const child of group.children) {
-      for (const row of executeTree(child, data)) {
+      for (const row of executeTree(child, data, activeSchema, db, schemas)) {
         if (!seen.has(row)) {
           seen.add(row);
           result.push(row);
@@ -104,7 +184,6 @@ export function executeTree(node: QueryNode, data: DataRow[]): DataRow[] {
   }
 }
 
-
 export interface QueryResult {
   rows: DataRow[];
   total: number;
@@ -113,12 +192,28 @@ export interface QueryResult {
 
 export function runQuery(
   tree: RuleGroup,
-  data: DataRow[]
+  data: DataRow[],
+  schema?: Schema,
+  db: Record<string, DataRow[]> = defaultDb,
+  schemas: Schema[] = defaultSchemas
 ): QueryResult {
-  const rows = executeTree(tree, data);
+  const activeSchema = schema ?? guessSchema(data, schemas);
+  const matchedRows = executeTree(tree, data, activeSchema, db, schemas);
+  const refFields = getReferencedFields(tree);
+
+  const enrichedRows = matchedRows.map((row) => {
+    const enriched = { ...row };
+    for (const fieldPath of refFields) {
+      if (fieldPath.includes('.')) {
+        enriched[fieldPath] = resolveFieldValue(row, fieldPath, activeSchema, db, schemas);
+      }
+    }
+    return enriched;
+  });
+
   return {
-    rows,
+    rows: enrichedRows,
     total: data.length,
-    matched: rows.length,
+    matched: matchedRows.length,
   };
 }

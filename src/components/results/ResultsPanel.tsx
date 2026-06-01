@@ -6,6 +6,8 @@ import { Play, ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react
 import { useQueryStore } from "@/store/queryStore"
 import { datasetMap } from "@/lib/mock/dataset"
 import { runQuery } from "@/lib/execution/executeQuery"
+import { schemas } from "@/lib/mock/schema"
+import { getReferencedFields, getFieldMetadata } from "@/lib/schemaUtils"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -88,8 +90,26 @@ export function ResultsPanel() {
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
-  // Derive columns from active schema
-  const columns = useMemo(() => getColumns(schema), [schema])
+  // Derive columns from active schema and query tree
+  const columns = useMemo(() => {
+    if (!schema) return []
+    const baseCols = getColumns(schema)
+    
+    // Find all referenced fields in queryTree that contain '.'
+    const referencedFields = getReferencedFields(queryTree)
+    const relationCols = referencedFields
+      .filter(f => f.includes('.'))
+      .map(fieldPath => {
+        const meta = getFieldMetadata(fieldPath, schema, schemas)
+        return {
+          key: fieldPath,
+          label: fieldPath,
+          type: meta?.type ?? 'string'
+        }
+      })
+      
+    return [...baseCols, ...relationCols]
+  }, [schema, queryTree])
 
   // Reset results when schema changes
   useEffect(() => {
@@ -109,10 +129,10 @@ export function ResultsPanel() {
     setPage(0)
     addHistoryEntry()
     await new Promise((r) => setTimeout(r, 300))
-    const result = runQuery(queryTree, activeDataset)
+    const result = runQuery(queryTree, activeDataset, schema, datasetMap, schemas)
     setRows(result.rows)
     setLoading(false)
-  }, [queryTree, addHistoryEntry, activeDataset])
+  }, [queryTree, addHistoryEntry, activeDataset, schema])
 
   useEffect(() => {
     const handler = () => { void handleRun() }

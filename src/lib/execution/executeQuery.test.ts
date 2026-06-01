@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { executeTree, runQuery } from './executeQuery'
 import { makeRule, makeGroup } from '@/test/helpers'
-import { usersDataset } from '@/lib/mock/dataset'
+import { usersDataset, ordersDataset } from '@/lib/mock/dataset'
+import { ordersSchema, usersSchema } from '@/lib/mock/schema'
 
 type Row = Record<string, unknown>
 const data = usersDataset as unknown as Row[]
@@ -191,5 +192,39 @@ describe('runQuery', () => {
     expect(result.total).toBe(data.length)
     expect(result.matched).toBe(result.rows.length)
     expect(result.matched).toBeGreaterThan(0)
+  })
+})
+
+describe('runQuery with JOIN/relations', () => {
+  it('correctly executes many-to-one join filter (Orders -> customer.status = active)', () => {
+    const group = makeGroup({
+      children: [makeRule({ field: 'customer.status', operator: 'equals', value: 'active' })],
+    })
+    
+    const result = runQuery(group, ordersDataset as any, ordersSchema)
+    
+    expect(result.matched).toBeGreaterThan(0)
+    expect(result.matched).toBeLessThan(ordersDataset.length)
+    
+    result.rows.forEach(row => {
+      expect(row['customer.status']).toBe('active')
+    })
+  })
+
+  it('correctly executes one-to-many join filter (Users -> orders.total > 500)', () => {
+    const group = makeGroup({
+      children: [makeRule({ field: 'orders.total', operator: 'greaterThan', value: '500' })],
+    })
+    
+    const result = runQuery(group, data, usersSchema)
+    
+    expect(result.matched).toBeGreaterThan(0)
+    expect(result.matched).toBeLessThan(data.length)
+    
+    result.rows.forEach(row => {
+      const totals = row['orders.total'] as number[]
+      expect(Array.isArray(totals)).toBe(true)
+      expect(totals.some(t => t > 500)).toBe(true)
+    })
   })
 })

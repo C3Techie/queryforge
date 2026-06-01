@@ -12,6 +12,10 @@ export const usersSchema: Schema = {
     { name: 'tags',       type: 'array' },
     { name: 'isVerified', type: 'boolean' },
   ],
+  relations: [
+    { name: 'orders', targetSchema: 'Orders', localField: 'id', foreignField: 'customerId' },
+    { name: 'reviews', targetSchema: 'Reviews', localField: 'id', foreignField: 'userId' },
+  ],
 };
 
 export const productsSchema: Schema = {
@@ -26,6 +30,11 @@ export const productsSchema: Schema = {
     { name: 'isAvailable', type: 'boolean' },
     { name: 'tags',        type: 'array' },
     { name: 'createdAt',   type: 'date' },
+  ],
+  relations: [
+    { name: 'orders', targetSchema: 'Orders', localField: 'id', foreignField: 'productId' },
+    { name: 'reviews', targetSchema: 'Reviews', localField: 'id', foreignField: 'productId' },
+    { name: 'inventory', targetSchema: 'Inventory', localField: 'id', foreignField: 'productId' },
   ],
 };
 
@@ -42,6 +51,10 @@ export const ordersSchema: Schema = {
     { name: 'createdAt',  type: 'date' },
     { name: 'region',     type: 'enum', options: ['north', 'south', 'east', 'west', 'central'] },
   ],
+  relations: [
+    { name: 'customer', targetSchema: 'Users', localField: 'customerId', foreignField: 'id' },
+    { name: 'product', targetSchema: 'Products', localField: 'productId', foreignField: 'id' },
+  ],
 };
 
 export const reviewsSchema: Schema = {
@@ -56,6 +69,10 @@ export const reviewsSchema: Schema = {
     { name: 'isVerified', type: 'boolean' },
     { name: 'createdAt', type: 'date' },
   ],
+  relations: [
+    { name: 'user', targetSchema: 'Users', localField: 'userId', foreignField: 'id' },
+    { name: 'product', targetSchema: 'Products', localField: 'productId', foreignField: 'id' },
+  ],
 };
 
 export const inventorySchema: Schema = {
@@ -68,6 +85,9 @@ export const inventorySchema: Schema = {
     { name: 'reorderLevel', type: 'number' },
     { name: 'lastRestocked', type: 'date' },
     { name: 'isActive',    type: 'boolean' },
+  ],
+  relations: [
+    { name: 'product', targetSchema: 'Products', localField: 'productId', foreignField: 'id' },
   ],
 };
 
