@@ -122,10 +122,10 @@ export function ResultsPanel() {
   const pageRows = sortedRows?.slice(page * RESULTS_PAGE_SIZE, (page + 1) * RESULTS_PAGE_SIZE) ?? []
 
   return (
-    <div className="flex flex-1 md:flex-none md:w-[320px] lg:w-[400px] border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200">
+    <div className="flex flex-1 md:flex-none w-full md:w-[320px] lg:w-[400px] max-w-full border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200 overflow-hidden">
 
-      {/* Header */}
-      <div className="p-4 border-b border-border flex justify-between items-center bg-surface-bright shrink-0">
+      {/* Header — shrink-0 so it never grows, flex-wrap so button stays on screen */}
+      <div className="p-4 border-b border-border flex justify-between items-center gap-2 bg-surface-bright shrink-0 flex-wrap">
         <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
           Query Results
         </h2>
@@ -134,7 +134,7 @@ export function ResultsPanel() {
           onClick={handleRun}
           disabled={loading || !schema}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-caps text-label-caps shadow-sm transition-colors",
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-caps text-label-caps shadow-sm transition-colors cursor-pointer",
             "bg-primary text-primary-foreground hover:bg-primary-container hover:text-on-primary-container",
             "disabled:opacity-50 disabled:pointer-events-none"
           )}
@@ -145,7 +145,7 @@ export function ResultsPanel() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
         {/* Loading skeleton */}
         {loading && (
           <div className="p-4">
@@ -193,17 +193,18 @@ export function ResultsPanel() {
 
         {/* Results table */}
         {!loading && rows !== null && rows.length > 0 && (
-          <div className="p-4 flex flex-col gap-3">
+          <div className="p-4 flex flex-col gap-3 min-w-0">
             {/* Meta */}
-            <div className="flex justify-between items-center text-body-sm text-muted-foreground">
+            <div className="flex justify-between items-center text-body-sm text-muted-foreground flex-wrap gap-1">
               <span>
                 Showing {pageRows.length} of {totalRows} record{totalRows !== 1 ? 's' : ''}
               </span>
               <span>Schema: {schema?.name ?? 'Users'}</span>
             </div>
 
-            {/* Table */}
-            <div className="bg-surface-container-lowest border border-border rounded-lg overflow-hidden shadow-sm">
+            {/* Table — scrolls horizontally, never pushes panel wider */}
+            <div className="bg-surface-container-lowest border border-border rounded-lg overflow-x-auto shadow-sm w-full">
+              <div className="min-w-[480px]">
               <Table>
                 <TableHeader className="bg-surface-container-low border-b border-border">
                   <TableRow>
@@ -238,27 +239,28 @@ export function ResultsPanel() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between text-body-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-body-sm text-muted-foreground gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="flex items-center gap-1 px-2 py-1 rounded hover:bg-surface-container disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 rounded hover:bg-surface-container disabled:opacity-40 transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="size-3.5" /> Prev
                 </button>
-                <span>
+                <span className="shrink-0">
                   Page {page + 1} of {totalPages}
                 </span>
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={page >= totalPages - 1}
-                  className="flex items-center gap-1 px-2 py-1 rounded hover:bg-surface-container disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 rounded hover:bg-surface-container disabled:opacity-40 transition-colors cursor-pointer"
                 >
                   Next <ChevronRight className="size-3.5" />
                 </button>

@@ -30,8 +30,9 @@ export function ShortcutsModal({ open, onOpenChange }: ShortcutsModalProps) {
 
         {/* Panel */}
         <Dialog.Popup className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2",
-          "mx-4 sm:mx-0",
+          // Center on screen, full width minus 2rem margin on mobile
+          "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+          "w-full max-w-[calc(100vw-2rem)] sm:max-w-md",
           "bg-surface-container-lowest border border-border rounded-xl shadow-xl",
           "flex flex-col gap-0 overflow-hidden",
           "transition-all duration-200",
@@ -57,8 +58,8 @@ export function ShortcutsModal({ open, onOpenChange }: ShortcutsModalProps) {
             </Dialog.Close>
           </div>
 
-          {/* Shortcut list */}
-          <div className="px-5 py-4 flex flex-col gap-1">
+          {/* Shortcut list — scrollable on small screens */}
+          <div className="px-5 py-4 flex flex-col gap-1 overflow-y-auto max-h-[60vh]">
             {SHORTCUTS.map((s) => (
               <div
                 key={s.action}

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryStore } from '@/store/queryStore';
-import { dispatchRunQuery, dispatchToggleDarkMode, dispatchOpenPresets } from '@/lib/events';
+import { dispatchRunQuery, dispatchToggleDarkMode, dispatchOpenPresets, dispatchTriggerImport, dispatchToggleJsonView } from '@/lib/events';
 
 
 function isEditableTarget(e: KeyboardEvent): boolean {
@@ -44,10 +44,21 @@ export function useKeyboardShortcuts({ onToggleShortcutsModal }: UseKeyboardShor
         return;
       }
 
-      // ── Ctrl + S → Open presets panel ─────────────────────────────────────
       if (ctrl && e.key === 's') {
         e.preventDefault();
         dispatchOpenPresets();
+        return;
+      }
+
+      if (ctrl && e.key === 'i') {
+        e.preventDefault();
+        dispatchTriggerImport();
+        return;
+      }
+
+      if (ctrl && e.key === 'b') {
+        e.preventDefault();
+        dispatchToggleJsonView();
         return;
       }
 

@@ -330,3 +330,12 @@
   background: linear-gradient(to right, transparent 0%, var(--background) 50%, transparent 100%);
   background-size: 1000px 100%;
 }
+
+/* Base style for hiding scrollbars while allowing scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
