@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Play, ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react"
 import { useQueryStore } from "@/store/queryStore"
 import { usersDataset } from "@/lib/mock/dataset"
@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { RESULTS_PAGE_SIZE, RESULTS_COLUMNS } from "@/lib/constants"
+import { RUN_QUERY_EVENT } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { UserRecord } from "@/lib/mock/dataset"
 
@@ -87,6 +88,12 @@ export function ResultsPanel() {
     setLoading(false)
   }, [queryTree])
 
+  useEffect(() => {
+    const handler = () => { void handleRun() }
+    window.addEventListener(RUN_QUERY_EVENT, handler)
+    return () => window.removeEventListener(RUN_QUERY_EVENT, handler)
+  }, [handleRun])
+
   const handleSort = useCallback((key: keyof UserRecord) => {
     setSortKey((prev) => {
       if (prev === key) {
@@ -114,7 +121,7 @@ export function ResultsPanel() {
   const pageRows = sortedRows?.slice(page * RESULTS_PAGE_SIZE, (page + 1) * RESULTS_PAGE_SIZE) ?? []
 
   return (
-    <div className="hidden md:flex w-[320px] lg:w-[400px] border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200">
+    <div className="flex flex-1 md:flex-none md:w-[320px] lg:w-[400px] border-l border-border bg-surface dark:bg-surface-dim shrink-0 flex-col transition-colors duration-200">
 
       {/* Header */}
       <div className="p-4 border-b border-border flex justify-between items-center bg-surface-bright shrink-0">

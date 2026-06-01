@@ -3,7 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { MobileNav } from "@/components/layout/MobileNav";
+import { MobileNavWrapper } from "@/components/layout/MobileNavWrapper";
+import { MobileTabProvider } from "@/lib/mobileTabContext";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -34,18 +35,20 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-screen flex flex-col overflow-hidden bg-background text-on-background transition-colors duration-200">
-        <Header />
-        
-        {/* Workspace Shell */}
-        <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
-          <Sidebar className="hidden md:flex shrink-0" />
-          <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
-            {children}
-          </main>
-        </div>
-        
-        {/* Mobile Navigation */}
-        <MobileNav />
+        <MobileTabProvider>
+          <Header />
+
+          {/* Workspace Shell */}
+          <div className="flex flex-1 overflow-hidden pt-14 pb-16 md:pb-0 relative">
+            <Sidebar className="hidden md:flex shrink-0" />
+            <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
+              {children}
+            </main>
+          </div>
+
+          {/* Mobile Navigation */}
+          <MobileNavWrapper />
+        </MobileTabProvider>
       </body>
     </html>
   );

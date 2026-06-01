@@ -1,23 +1,26 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
 import { Wrench, Eye, Table } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function MobileNav() {
-  const [activeTab, setActiveTab] = useState<"builder" | "preview" | "results">("builder")
+export type MobileTab = "builder" | "preview" | "results"
 
+interface MobileNavProps {
+  activeTab: MobileTab
+  onTabChange: (tab: MobileTab) => void
+}
+
+export function MobileNav({ activeTab, onTabChange }: MobileNavProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant dark:border-outline z-40 flex items-center justify-around md:hidden shadow-lg transition-colors duration-200">
-      
-      {/* Builder Tab */}
+
       <button
-        onClick={() => setActiveTab("builder")}
+        onClick={() => onTabChange("builder")}
         className={cn(
           "flex flex-col items-center justify-center w-full h-full cursor-pointer transition-all duration-200",
-          activeTab === "builder" 
-            ? "text-primary dark:text-primary-fixed-dim" 
+          activeTab === "builder"
+            ? "text-primary dark:text-primary-fixed-dim"
             : "text-on-surface-variant opacity-60 hover:opacity-100"
         )}
       >
@@ -27,13 +30,12 @@ export function MobileNav() {
         </span>
       </button>
 
-      {/* Preview Tab */}
       <button
-        onClick={() => setActiveTab("preview")}
+        onClick={() => onTabChange("preview")}
         className={cn(
           "flex flex-col items-center justify-center w-full h-full cursor-pointer transition-all duration-200",
-          activeTab === "preview" 
-            ? "text-primary dark:text-primary-fixed-dim" 
+          activeTab === "preview"
+            ? "text-primary dark:text-primary-fixed-dim"
             : "text-on-surface-variant opacity-60 hover:opacity-100"
         )}
       >
@@ -43,13 +45,12 @@ export function MobileNav() {
         </span>
       </button>
 
-      {/* Results Tab */}
       <button
-        onClick={() => setActiveTab("results")}
+        onClick={() => onTabChange("results")}
         className={cn(
           "flex flex-col items-center justify-center w-full h-full cursor-pointer transition-all duration-200",
-          activeTab === "results" 
-            ? "text-primary dark:text-primary-fixed-dim" 
+          activeTab === "results"
+            ? "text-primary dark:text-primary-fixed-dim"
             : "text-on-surface-variant opacity-60 hover:opacity-100"
         )}
       >

@@ -2,7 +2,6 @@ import type { FieldType, Operator } from '@/types/query';
 import type { UserRecord } from '@/lib/mock/dataset';
 
 
-// Operator map — which operators are valid per field type
 export const OPERATOR_MAP: Record<FieldType, Operator[]> = {
   string:  ['equals', 'notEquals', 'contains', 'startsWith', 'inArray', 'regex', 'isNull', 'isNotNull'],
   number:  ['equals', 'notEquals', 'greaterThan', 'lessThan', 'between', 'isNull', 'isNotNull'],
@@ -12,7 +11,6 @@ export const OPERATOR_MAP: Record<FieldType, Operator[]> = {
   array:   ['contains', 'isNull', 'isNotNull'],
 };
 
-// Operator display labels — human-readable names for each operator
 export const OPERATOR_LABELS: Record<Operator, string> = {
   equals:      'equals',
   notEquals:   'not equals',
@@ -29,10 +27,8 @@ export const OPERATOR_LABELS: Record<Operator, string> = {
   after:       'after',
 };
 
-// Operators that require no value input
 export const NO_VALUE_OPERATORS = new Set<Operator>(['isNull', 'isNotNull']);
 
-// Results panel — pagination and visible columns
 export const RESULTS_PAGE_SIZE = 10;
 
 export const RESULTS_COLUMNS: { key: keyof UserRecord; label: string }[] = [
@@ -44,12 +40,32 @@ export const RESULTS_COLUMNS: { key: keyof UserRecord; label: string }[] = [
   { key: 'createdAt',  label: 'Created' },
 ];
 
-// Live preview — syntax highlighting regex patterns
 export const SQL_KEYWORDS_REGEX = /\b(SELECT|FROM|WHERE|AND|OR|LIKE|IN|BETWEEN|IS|NULL|NOT|REGEXP)\b/g;
 export const SQL_STRINGS_REGEX  = /'[^']*'/g;
 export const SQL_NUMBERS_REGEX  = /\b\d+(\.\d+)?\b/g;
 export const JSON_TOKEN_REGEX   = /("(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\btrue\b|\bfalse\b|\bnull\b)|(\$\w+)/g;
 
-// Live preview — available query format tabs
 export const PREVIEW_TABS = ['SQL', 'MongoDB', 'GraphQL'] as const;
 export type PreviewTab = typeof PREVIEW_TABS[number];
+
+export const RUN_QUERY_EVENT = 'queryforge:run-query' as const;
+export const TOGGLE_DARK_MODE_EVENT = 'queryforge:toggle-dark-mode' as const;
+
+export const MAX_HISTORY = 20;
+
+export interface ShortcutEntry {
+  action: string;
+  keys: string[];
+  available: boolean;
+}
+
+export const SHORTCUTS: ShortcutEntry[] = [
+  { action: 'Run Query',             keys: ['Ctrl', 'Enter'], available: true  },
+  { action: 'Undo last change',      keys: ['Ctrl', 'Z'],     available: true  },
+  { action: 'Delete selected node',  keys: ['Delete'],        available: true  },
+  { action: 'Toggle Dark Mode',      keys: ['Ctrl', 'D'],     available: true  },
+  { action: 'Open this help modal',  keys: ['?'],             available: true  },
+  { action: 'Save as preset',        keys: ['Ctrl', 'S'],     available: false },
+  { action: 'Import query',          keys: ['Ctrl', 'I'],     available: false },
+  { action: 'Toggle Builder / JSON', keys: ['Ctrl', 'B'],     available: false },
+];
