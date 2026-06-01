@@ -7,6 +7,8 @@ import { Plus, Database, Bookmark, History, ChevronDown, ChevronUp, ArrowLeft } 
 import { HistoryPanel } from "@/components/sidebar/HistoryPanel"
 import { PresetsPanel } from "@/components/sidebar/PresetsPanel"
 import { OPEN_PRESETS_EVENT } from "@/lib/constants"
+import { useQueryStore } from "@/store/queryStore"
+import { schemas } from "@/lib/mock/schema"
 import { cn } from "@/lib/utils"
 
 
@@ -28,7 +30,7 @@ export function Sidebar({
     openPresetsWithFocus ? "presets" : "main"
   )
   const [isSchemaExpanded, setIsSchemaExpanded] = useState(true)
-  const [activeSchema, setActiveSchema] = useState<"users" | "products">("users")
+  const { schema: activeSchema, setSchema } = useQueryStore()
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -124,20 +126,20 @@ export function Sidebar({
 
               {isSchemaExpanded && (
                 <div className="ml-9 flex flex-col gap-1.5 py-1 mb-2">
-                  {(["users", "products"] as const).map((schema) => (
+                  {schemas.map((s) => (
                     <button
-                      key={schema}
-                      onClick={() => setActiveSchema(schema)}
+                      key={s.name}
+                      onClick={() => setSchema(s)}
                       className={cn(
-                        "font-body-sm text-body-sm py-1 hover:text-primary transition-colors flex items-center gap-2 text-left cursor-pointer capitalize",
-                        activeSchema === schema ? "text-primary font-bold" : "text-on-surface"
+                        "font-body-sm text-body-sm py-1 hover:text-primary transition-colors flex items-center gap-2 text-left cursor-pointer",
+                        activeSchema?.name === s.name ? "text-primary font-bold" : "text-on-surface"
                       )}
                     >
                       <span className={cn(
                         "w-1.5 h-1.5 rounded-full transition-transform duration-200",
-                        activeSchema === schema ? "bg-primary scale-110" : "bg-outline-variant"
+                        activeSchema?.name === s.name ? "bg-primary scale-110" : "bg-outline-variant"
                       )} />
-                      {schema.charAt(0).toUpperCase() + schema.slice(1)}
+                      {s.name}
                     </button>
                   ))}
                 </div>

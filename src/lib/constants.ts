@@ -31,7 +31,7 @@ export const NO_VALUE_OPERATORS = new Set<Operator>(['isNull', 'isNotNull']);
 
 export const RESULTS_PAGE_SIZE = 10;
 
-export const RESULTS_COLUMNS: { key: keyof UserRecord; label: string }[] = [
+export const RESULTS_COLUMNS: { key: string; label: string }[] = [
   { key: 'id',         label: 'ID' },
   { key: 'name',       label: 'Name' },
   { key: 'age',        label: 'Age' },

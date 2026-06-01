@@ -31,9 +31,11 @@ export default function Home() {
 
   const [jsonView, setJsonView] = useState(false)
 
-  // Set default schema on mount
+  // Set default schema on mount if none is active
   useEffect(() => {
-    setSchema(usersSchema)
+    if (!useQueryStore.getState().schema) {
+      setSchema(usersSchema)
+    }
   }, [setSchema])
 
   // Listen for Ctrl+B to toggle JSON view
