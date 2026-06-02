@@ -142,10 +142,10 @@ Testing focuses on correctness of complex system behavior:
 - sanitization/import safety helpers
 
 Coverage thresholds (Vitest):
-- lines: 80%
-- statements: 80%
-- functions: 80%
-- branches: 75%
+- lines: 60%
+- statements: 60%
+- functions: 60%
+- branches: 50%
 
 ## Deployment and CI
 

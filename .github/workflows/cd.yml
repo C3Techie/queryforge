@@ -5,6 +5,10 @@ on:
     branches:
       - main
       - master
+  pull_request:
+    branches:
+      - main
+      - master
 
 # Ensure only one deployment runs at a time for safety
 concurrency:
@@ -12,8 +16,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build & Deploy to Vercel
+  deploy-preview:
+    name: Build & Deploy Preview to Vercel
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm add --global vercel@latest
+
+      - name: Pull Vercel Preview Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Preview Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Preview Artifacts to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-production:
+    name: Build & Deploy Production to Vercel
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     # Requires Vercel environment secrets
     env:
@@ -47,8 +90,8 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add --global vercel@latest
 
-      # Step 6: Pull Vercel environment information (creates .vercel/project.json)
-      - name: Pull Vercel Environment Information
+      # Step 6: Pull production Vercel environment information
+      - name: Pull Vercel Production Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       # Step 7: Build Project Artifacts

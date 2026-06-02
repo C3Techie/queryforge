@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { parseImportedTree, sanitizeFieldPath, escapeRegexLiteral } from './querySafety'
 
+type RuleNode = {
+  id: string
+  type: 'rule'
+  field: string
+  operator: 'equals'
+  value: string
+}
+
+type GroupNode = {
+  id: string
+  type: 'group'
+  logicalOperator: 'AND' | 'OR'
+  children: Array<GroupNode | RuleNode>
+}
+
 describe('querySafety', () => {
   it('parses a valid deeply nested query tree', () => {
     const nestedTree = {
@@ -47,5 +62,30 @@ describe('querySafety', () => {
 
   it('escapes regex special characters safely', () => {
     expect(escapeRegexLiteral('a+b?(c)')).toBe('a\\+b\\?\\(c\\)')
+  })
+
+  it('rejects trees deeper than max depth guard', () => {
+    let node: GroupNode = { id: 'g0', type: 'group', logicalOperator: 'AND', children: [] }
+    const root = node
+    for (let i = 1; i <= 25; i++) {
+      const next: GroupNode = { id: `g${i}`, type: 'group', logicalOperator: 'AND', children: [] }
+      node.children.push(next)
+      node = next
+    }
+
+    const parsed = parseImportedTree(root)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) expect(parsed.error).toMatch(/too deep/)
+  })
+
+  it('rejects trees larger than max node guard', () => {
+    const root: GroupNode = { id: 'root', type: 'group', logicalOperator: 'AND', children: [] }
+    for (let i = 0; i < 600; i++) {
+      root.children.push({ id: `r-${i}`, type: 'rule', field: 'name', operator: 'equals', value: 'x' })
+    }
+
+    const parsed = parseImportedTree(root)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) expect(parsed.error).toMatch(/too large/)
   })
 })

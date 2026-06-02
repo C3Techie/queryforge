@@ -3,6 +3,11 @@ import { OPERATOR_MAP, NO_VALUE_OPERATORS } from '@/lib/constants';
 import { getFieldMetadata } from '@/lib/schemaUtils';
 import { schemas as defaultSchemas } from '@/lib/mock/schema';
 
+function isInvalidDate(value: unknown): boolean {
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime());
+}
+
 function validateRule(rule: Rule, schema: Schema, schemas: Schema[]): string[] {
   const errors: string[] = [];
 
@@ -30,6 +35,32 @@ function validateRule(rule: Rule, schema: Schema, schemas: Schema[]): string[] {
 
     if (isEmpty) {
       errors.push(`A value is required for field "${rule.field}" with operator "${rule.operator}".`);
+    }
+  }
+
+  // Semantic date checks for stronger query correctness.
+  if (schemaField.type === 'date') {
+    if (rule.operator === 'before' || rule.operator === 'after' || rule.operator === 'equals' || rule.operator === 'notEquals') {
+      if (!NO_VALUE_OPERATORS.has(rule.operator) && rule.value !== null && rule.value !== undefined && String(rule.value).trim() !== '' && isInvalidDate(rule.value)) {
+        errors.push(`Value "${String(rule.value)}" is not a valid date for field "${rule.field}".`);
+      }
+    }
+
+    if (rule.operator === 'between') {
+      if (!Array.isArray(rule.value) || rule.value.length < 2) {
+        errors.push(`Operator "between" on "${rule.field}" requires two date values.`);
+      } else {
+        const [startRaw, endRaw] = rule.value;
+        if (isInvalidDate(startRaw) || isInvalidDate(endRaw)) {
+          errors.push(`Operator "between" on "${rule.field}" requires valid date values.`);
+        } else {
+          const start = new Date(String(startRaw));
+          const end = new Date(String(endRaw));
+          if (start > end) {
+            errors.push(`Date range for "${rule.field}" is invalid: start date must be before end date.`);
+          }
+        }
+      }
     }
   }
 
