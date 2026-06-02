@@ -175,7 +175,7 @@ export default function Home() {
                               try {
                                 const parsed = JSON.parse(derivedJsonText)
                                 importTree(parsed)
-                              } catch (_err) {
+                              } catch {
                                 alert("Invalid JSON format")
                               }
                             }}
