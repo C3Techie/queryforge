@@ -3,9 +3,10 @@ import { immer } from 'zustand/middleware/immer';
 import { current } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import type { Rule, RuleGroup, QueryNode, Schema, HistoryEntry, Preset } from '@/types/query';
-import { MAX_HISTORY, MAX_PRESETS } from '@/lib/constants';
+import { MAX_HISTORY, MAX_PRESETS, OPERATOR_MAP } from '@/lib/constants';
 import { schemas } from '@/lib/mock/schema';
 import { parseImportedTree } from '@/lib/querySafety';
+import { getFieldMetadata } from '@/lib/schemaUtils';
 
 
 interface QueryState {
@@ -19,6 +20,7 @@ interface QueryState {
   // Core tree actions
   setSchema: (schema: Schema) => void;
   addRule: (parentGroupId: string) => void;
+  addRuleWithField: (parentGroupId: string, field: string) => void;
   addGroup: (parentGroupId: string) => void;
   updateNode: (nodeId: string, updates: Partial<Rule | RuleGroup>) => void;
   removeNode: (nodeId: string) => void;
@@ -127,6 +129,30 @@ export const useQueryStore = create<QueryState>()(
       set((state) => {
         pushUndoStack(state);
         addChildToGroup(state.queryTree, parentGroupId, makeEmptyRule());
+      });
+    },
+
+    addRuleWithField(parentGroupId, field) {
+      set((state) => {
+        if (!state.schema || !field.trim()) return;
+
+        const meta = getFieldMetadata(field, state.schema, schemas);
+        if (!meta) return;
+
+        const allowed = OPERATOR_MAP[meta.type];
+        const operator = allowed[0] ?? 'equals';
+
+        const rule: Rule = {
+          id: uuidv4(),
+          type: 'rule',
+          field,
+          operator,
+          value: '',
+        };
+
+        pushUndoStack(state);
+        addChildToGroup(state.queryTree, parentGroupId, rule);
+        state.selectedNodeId = rule.id;
       });
     },
 
