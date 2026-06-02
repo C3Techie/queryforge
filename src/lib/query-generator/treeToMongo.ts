@@ -1,6 +1,9 @@
 import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
 import { getFieldMetadata } from '@/lib/schemaUtils';
 import { schemas as defaultSchemas } from '@/lib/mock/schema';
+import { escapeRegexLiteral, isAllowedOperatorForField, sanitizeFieldPath } from '@/lib/querySafety';
+
+const ALWAYS_FALSE_MONGO = { $expr: { $eq: [1, 0] } } as const;
 
 function coerceValue(value: unknown, fieldType: string): unknown {
   if (fieldType === 'number') return Number(value);
@@ -9,58 +12,65 @@ function coerceValue(value: unknown, fieldType: string): unknown {
 }
 
 function ruleToMongo(rule: Rule, schema: Schema, schemas: Schema[]): Record<string, unknown> {
-  const schemaField = getFieldMetadata(rule.field, schema, schemas);
+  const safeFieldPath = sanitizeFieldPath(rule.field);
+  if (!safeFieldPath) return ALWAYS_FALSE_MONGO;
+
+  const schemaField = getFieldMetadata(safeFieldPath, schema, schemas);
   const fieldType = schemaField?.type ?? 'string';
+  if (!schemaField || !isAllowedOperatorForField(safeFieldPath, rule.operator, schema, schemas)) {
+    return ALWAYS_FALSE_MONGO;
+  }
+
   const val = coerceValue(rule.value, fieldType);
 
   switch (rule.operator) {
     case 'equals':
-      return { [rule.field]: val };
+      return { [safeFieldPath]: val };
 
     case 'notEquals':
-      return { [rule.field]: { $ne: val } };
+      return { [safeFieldPath]: { $ne: val } };
 
     case 'contains':
-      return { [rule.field]: { $regex: String(rule.value), $options: 'i' } };
+      return { [safeFieldPath]: { $regex: escapeRegexLiteral(String(rule.value)), $options: 'i' } };
 
     case 'startsWith':
-      return { [rule.field]: { $regex: `^${String(rule.value)}`, $options: 'i' } };
+      return { [safeFieldPath]: { $regex: `^${escapeRegexLiteral(String(rule.value))}`, $options: 'i' } };
 
     case 'greaterThan':
-      return { [rule.field]: { $gt: val } };
+      return { [safeFieldPath]: { $gt: val } };
 
     case 'lessThan':
-      return { [rule.field]: { $lt: val } };
+      return { [safeFieldPath]: { $lt: val } };
 
     case 'inArray': {
       const items = Array.isArray(rule.value)
         ? rule.value
         : String(rule.value).split(',').map((s) => s.trim());
-      return { [rule.field]: { $in: items.map((v) => coerceValue(v, fieldType)) } };
+      return { [safeFieldPath]: { $in: items.map((v) => coerceValue(v, fieldType)) } };
     }
 
     case 'between': {
       const parts = Array.isArray(rule.value) ? rule.value : [rule.value, rule.value];
-      return { [rule.field]: { $gte: coerceValue(parts[0], fieldType), $lte: coerceValue(parts[1], fieldType) } };
+      return { [safeFieldPath]: { $gte: coerceValue(parts[0], fieldType), $lte: coerceValue(parts[1], fieldType) } };
     }
 
     case 'isNull':
-      return { [rule.field]: null };
+      return { [safeFieldPath]: null };
 
     case 'isNotNull':
-      return { [rule.field]: { $ne: null } };
+      return { [safeFieldPath]: { $ne: null } };
 
     case 'before':
-      return { [rule.field]: { $lt: String(rule.value) } };
+      return { [safeFieldPath]: { $lt: String(rule.value) } };
 
     case 'after':
-      return { [rule.field]: { $gt: String(rule.value) } };
+      return { [safeFieldPath]: { $gt: String(rule.value) } };
 
     case 'regex':
-      return { [rule.field]: { $regex: String(rule.value) } };
+      return { [safeFieldPath]: { $regex: String(rule.value) } };
 
     default:
-      return {};
+      return ALWAYS_FALSE_MONGO;
   }
 }
 

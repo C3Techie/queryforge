@@ -162,6 +162,13 @@ describe('treeToSQL', () => {
     expect(treeToSQL(root, usersSchema)).toContain("'O''Brien'")
   })
 
+  it('returns fail-closed clause for invalid field path', () => {
+    const root = makeGroup({
+      children: [makeRule({ field: 'name; DROP TABLE users;', operator: 'equals', value: 'x' })],
+    })
+    expect(treeToSQL(root, usersSchema)).toContain('WHERE 1=0')
+  })
+
   it('generates JOIN clause for relational fields', () => {
     const root = makeGroup({
       children: [makeRule({ field: 'customer.status', operator: 'equals', value: 'active' })],

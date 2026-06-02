@@ -111,4 +111,11 @@ describe('treeToGraphQL', () => {
     expect(result.AND).toHaveLength(2)
     expect(result.AND[1]).toHaveProperty('OR')
   })
+
+  it('returns invalid marker for unsafe field paths', () => {
+    const root = makeGroup({
+      children: [makeRule({ field: 'name;delete from users', operator: 'equals', value: 'x' })],
+    })
+    expect(treeToGraphQL(root, usersSchema)).toEqual({ AND: [{ _invalid: true }] })
+  })
 })
