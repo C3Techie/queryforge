@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback } from "react"
 import { useQueryStore } from "@/store/queryStore"
 import { schemas } from "@/lib/mock/schema"
 import { formatFieldLabel, fieldTypeBadgeClass } from "@/lib/schemaDisplay"
+import { useMobileTab } from "@/lib/mobileTabContext"
 import type { FieldType } from "@/types/query"
 import {
   Select,
@@ -39,12 +40,18 @@ function FieldRow({ name, type }: { name: string; type: FieldType }) {
 }
 
 export function SchemaExplorer() {
-  const { schema: activeSchema, setSchema } = useQueryStore()
-  const [highlightedField, setHighlightedField] = useState<string | null>(null)
+  const { schema: activeSchema, setSchema, queryTree, addRuleWithField } =
+    useQueryStore()
+  const { setActiveTab } = useMobileTab()
 
-  useEffect(() => {
-    setHighlightedField(null)
-  }, [activeSchema?.name])
+  const handleColumnPick = useCallback(
+    (fieldName: string | null) => {
+      if (!fieldName || !activeSchema) return
+      addRuleWithField(queryTree.id, fieldName)
+      setActiveTab("builder")
+    },
+    [activeSchema, addRuleWithField, queryTree.id, setActiveTab]
+  )
 
   const columnCount = activeSchema?.fields.length ?? 0
 
@@ -89,9 +96,12 @@ export function SchemaExplorer() {
         >
           Columns
         </label>
+        <p className="text-[10px] text-muted-foreground px-0.5 leading-snug">
+          Pick a column to add a filter condition.
+        </p>
         <Select
-          value={highlightedField ?? ""}
-          onValueChange={(fieldName) => setHighlightedField(fieldName || null)}
+          value=""
+          onValueChange={handleColumnPick}
           disabled={!activeSchema}
         >
           <SelectTrigger
@@ -102,7 +112,7 @@ export function SchemaExplorer() {
             <SelectValue
               placeholder={
                 activeSchema
-                  ? `${columnCount} column${columnCount === 1 ? "" : "s"}`
+                  ? `Add filter (${columnCount} columns)`
                   : "Select a table first"
               }
             />
