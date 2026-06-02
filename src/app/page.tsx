@@ -10,7 +10,7 @@ import { LivePreview } from "@/components/preview/LivePreview"
 import { ResultsPanel } from "@/components/results/ResultsPanel"
 import { useMobileTab } from "@/lib/mobileTabContext"
 import { cn } from "@/lib/utils"
-import { TOGGLE_JSON_VIEW_EVENT, RUN_QUERY_EVENT } from "@/lib/constants"
+import { TOGGLE_JSON_VIEW_EVENT } from "@/lib/constants"
 import { dispatchRunQuery } from "@/lib/events"
 import type { Rule, RuleGroup } from "@/types/query"
 import { motion, AnimatePresence } from "framer-motion"
@@ -29,19 +29,18 @@ export default function Home() {
     setLogicalOperator,
     reorderChildren,
     setSelectedNodeId,
-    exportTree,
+
     importTree,
   } = useQueryStore()
 
   const [jsonView, setJsonView] = useState(false)
   const [jsonText, setJsonText] = useState("")
 
-  // Sync jsonText whenever queryTree changes or jsonView is enabled
-  useEffect(() => {
-    if (jsonView) {
-      setJsonText(JSON.stringify(queryTree, null, 2))
-    }
-  }, [queryTree, jsonView])
+  // Derive jsonText from queryTree when jsonView is active
+  const derivedJsonText = React.useMemo(
+    () => (jsonView ? JSON.stringify(queryTree, null, 2) : jsonText),
+    [queryTree, jsonView, jsonText]
+  )
 
   // Set default schema on mount if none is active
   useEffect(() => {
@@ -92,7 +91,7 @@ export default function Home() {
     return validateNode(queryTree, schema, schemas).length === 0
   }, [queryTree, schema])
 
-  const jsonTextRef = React.useRef<HTMLTextAreaElement>(null)
+
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
@@ -174,9 +173,9 @@ export default function Home() {
                             type="button"
                             onClick={() => {
                               try {
-                                const parsed = JSON.parse(jsonText)
+                                const parsed = JSON.parse(derivedJsonText)
                                 importTree(parsed)
-                              } catch (err) {
+                              } catch (_err) {
                                 alert("Invalid JSON format")
                               }
                             }}
@@ -187,7 +186,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard.writeText(jsonText).then(() => {
+                              navigator.clipboard.writeText(derivedJsonText).then(() => {
                                 alert("JSON copied to clipboard!")
                               }).catch(() => {
                                 alert("Failed to copy JSON")
@@ -200,7 +199,7 @@ export default function Home() {
                         </div>
                       </div>
                       <textarea
-                        value={jsonText}
+                        value={derivedJsonText}
                         onChange={(e) => setJsonText(e.target.value)}
                         className="flex-1 p-4 font-code-sm text-code-sm text-on-surface bg-surface-dim leading-relaxed w-full outline-none resize-none no-scrollbar min-h-0"
                         spellCheck={false}

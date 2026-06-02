@@ -117,12 +117,14 @@ export function ResultsPanel() {
     return validateNode(queryTree, schema, schemas).length === 0
   }, [queryTree, schema])
 
-  // Reset results when schema changes
-  useEffect(() => {
-    setRows(null)
-    setPage(0)
-    setSortKey(null)
-  }, [schema?.name])
+  // Reset results when schema changes — use ref to detect change without setState in effect
+  const prevSchemaNameRef = React.useRef(schema?.name)
+  if (prevSchemaNameRef.current !== schema?.name) {
+    prevSchemaNameRef.current = schema?.name
+    if (rows !== null) setRows(null)
+    if (page !== 0) setPage(0)
+    if (sortKey !== null) setSortKey(null)
+  }
 
   // Get the dataset for the active schema
   const activeDataset = useMemo(() => {

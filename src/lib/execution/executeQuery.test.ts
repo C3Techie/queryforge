@@ -201,7 +201,7 @@ describe('runQuery with JOIN/relations', () => {
       children: [makeRule({ field: 'customer.status', operator: 'equals', value: 'active' })],
     })
     
-    const result = runQuery(group, ordersDataset as any, ordersSchema)
+    const result = runQuery(group, ordersDataset as unknown as Record<string, unknown>[], ordersSchema)
     
     expect(result.matched).toBeGreaterThan(0)
     expect(result.matched).toBeLessThan(ordersDataset.length)

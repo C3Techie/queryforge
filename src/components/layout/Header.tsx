@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Sun, Moon, Command, Upload, Download } from "lucide-react"
@@ -128,12 +129,12 @@ export function Header() {
           </Sheet>
 
           {/* Logo — click to refresh page, on mobile also resets to builder tab */}
-          <a
+          <Link
             href="/"
             className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg lg:text-xl cursor-pointer hover:opacity-80 transition-opacity"
           >
             QueryForge
-          </a>
+          </Link>
         </div>
 
         {/* Right Side */}

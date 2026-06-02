@@ -1,5 +1,4 @@
 import type { FieldType, Operator } from '@/types/query';
-import type { UserRecord } from '@/lib/mock/dataset';
 
 
 export const OPERATOR_MAP: Record<FieldType, Operator[]> = {

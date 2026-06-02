@@ -1,4 +1,4 @@
-import type { QueryNode, Rule, RuleGroup, Schema, Operator } from '@/types/query';
+import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
 import { getFieldMetadata, getReferencedFields } from '@/lib/schemaUtils';
 import { schemas as defaultSchemas } from '@/lib/mock/schema';
 
