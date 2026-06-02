@@ -65,6 +65,27 @@ describe('queryStore', () => {
     expect(nested.children[0].type).toBe('rule')
   })
 
+  it('addRuleWithField adds a rule with field and default operator', () => {
+    const store = getStore()
+    store.setSchema(usersSchema)
+    store.addRuleWithField(store.queryTree.id, 'age')
+
+    const state = getStore()
+    expect(state.queryTree.children).toHaveLength(1)
+    const rule = state.queryTree.children[0]
+    expect(rule.type).toBe('rule')
+    if (rule.type !== 'rule') return
+    expect(rule.field).toBe('age')
+    expect(rule.operator).toBe('equals')
+    expect(state.selectedNodeId).toBe(rule.id)
+  })
+
+  it('addRuleWithField does nothing without an active schema', () => {
+    const { queryTree, addRuleWithField } = getStore()
+    addRuleWithField(queryTree.id, 'name')
+    expect(getStore().queryTree.children).toHaveLength(0)
+  })
+
   // ── addGroup ───
 
   it('addGroup adds a nested group', () => {
