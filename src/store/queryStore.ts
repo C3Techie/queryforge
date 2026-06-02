@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Rule, RuleGroup, QueryNode, Schema, HistoryEntry, Preset } from '@/types/query';
 import { MAX_HISTORY, MAX_PRESETS } from '@/lib/constants';
 import { schemas } from '@/lib/mock/schema';
+import { parseImportedTree } from '@/lib/querySafety';
 
 
 interface QueryState {
@@ -24,7 +25,7 @@ interface QueryState {
   setLogicalOperator: (groupId: string, op: 'AND' | 'OR') => void;
   reorderChildren: (parentGroupId: string, fromIndex: number, toIndex: number) => void;
   undo: () => void;
-  importTree: (tree: RuleGroup) => void;
+  importTree: (tree: unknown) => void;
   exportTree: () => RuleGroup;
   setSelectedNodeId: (id: string | null) => void;
   clearQuery: () => void;
@@ -105,15 +106,6 @@ function pushUndoStack(state: { undoStack: RuleGroup[]; queryTree: RuleGroup }):
   if (state.undoStack.length > MAX_HISTORY) {
     state.undoStack.splice(0, state.undoStack.length - MAX_HISTORY);
   }
-}
-
-function isValidTree(tree: unknown): tree is RuleGroup {
-  return (
-    typeof tree === 'object' &&
-    tree !== null &&
-    (tree as RuleGroup).type === 'group' &&
-    Array.isArray((tree as RuleGroup).children)
-  );
 }
 
 export const useQueryStore = create<QueryState>()(
@@ -197,10 +189,11 @@ export const useQueryStore = create<QueryState>()(
     },
 
     importTree(tree) {
-      if (!isValidTree(tree)) return;
+      const parsed = parseImportedTree(tree);
+      if (!parsed.success) return;
       set((state) => {
         pushUndoStack(state);
-        state.queryTree = tree;
+        state.queryTree = parsed.data;
       });
     },
 

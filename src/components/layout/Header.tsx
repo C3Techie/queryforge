@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 import { useQueryStore } from "@/store/queryStore"
 import { useToast } from "@/components/ui/toast"
 import { TOGGLE_DARK_MODE_EVENT, TRIGGER_IMPORT_EVENT } from "@/lib/constants"
+import { parseImportedTree } from "@/lib/querySafety"
 
 export function Header() {
   const [isDark, setIsDark] = useState(
@@ -64,11 +65,12 @@ export function Header() {
       reader.onload = (ev) => {
         try {
           const parsed = JSON.parse(ev.target?.result as string)
-          if (parsed?.type !== 'group' || !Array.isArray(parsed?.children)) {
-            toast('Invalid file — must be a QueryForge RuleGroup JSON.', 'error')
+          const validatedTree = parseImportedTree(parsed)
+          if (!validatedTree.success) {
+            toast(validatedTree.error, 'error')
             return
           }
-          importTree(parsed)
+          importTree(validatedTree.data)
           toast('Query imported successfully.', 'success')
         } catch {
           toast('Could not parse file — invalid JSON.', 'error')

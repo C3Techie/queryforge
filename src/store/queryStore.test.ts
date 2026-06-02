@@ -162,9 +162,20 @@ describe('queryStore', () => {
 
   it('importTree rejects invalid trees', () => {
     const originalId = getStore().queryTree.id
-    // @ts-expect-error intentionally invalid
     getStore().importTree({ type: 'rule', id: 'bad' })
     // Tree should be unchanged
+    expect(getStore().queryTree.id).toBe(originalId)
+  })
+
+  it('importTree rejects malformed nested groups', () => {
+    const originalId = getStore().queryTree.id
+    // missing logicalOperator in nested group
+    getStore().importTree({
+      id: 'root',
+      type: 'group',
+      logicalOperator: 'AND',
+      children: [{ id: 'child-group', type: 'group', children: [] }],
+    })
     expect(getStore().queryTree.id).toBe(originalId)
   })
 
