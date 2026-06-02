@@ -8,7 +8,7 @@ import { HistoryPanel } from "@/components/sidebar/HistoryPanel"
 import { PresetsPanel } from "@/components/sidebar/PresetsPanel"
 import { OPEN_PRESETS_EVENT } from "@/lib/constants"
 import { useQueryStore } from "@/store/queryStore"
-import { schemas } from "@/lib/mock/schema"
+import { SchemaExplorer } from "@/components/sidebar/SchemaExplorer"
 import { cn } from "@/lib/utils"
 
 
@@ -30,7 +30,7 @@ export function Sidebar({
     openPresetsWithFocus ? "presets" : "main"
   )
   const [isSchemaExpanded, setIsSchemaExpanded] = useState(true)
-  const { schema: activeSchema, setSchema, clearQuery } = useQueryStore()
+  const { clearQuery } = useQueryStore()
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -126,23 +126,8 @@ export function Sidebar({
               </button>
 
               {isSchemaExpanded && (
-                <div className="ml-9 flex flex-col gap-1.5 py-1 mb-2">
-                  {schemas.map((s) => (
-                    <button
-                      key={s.name}
-                      onClick={() => setSchema(s)}
-                      className={cn(
-                        "font-body-sm text-body-sm py-1 hover:text-primary transition-colors flex items-center gap-2 text-left cursor-pointer",
-                        activeSchema?.name === s.name ? "text-primary font-bold" : "text-on-surface"
-                      )}
-                    >
-                      <span className={cn(
-                        "w-1.5 h-1.5 rounded-full transition-transform duration-200",
-                        activeSchema?.name === s.name ? "bg-primary scale-110" : "bg-outline-variant"
-                      )} />
-                      {s.name}
-                    </button>
-                  ))}
+                <div className="mt-1 mb-2 min-w-0">
+                  <SchemaExplorer />
                 </div>
               )}
             </div>
