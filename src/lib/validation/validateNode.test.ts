@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { validateNode } from './validateNode'
 import { makeRule, makeGroup } from '@/test/helpers'
-import { usersSchema } from '@/lib/mock/schema'
+import { usersSchema, ordersSchema } from '@/lib/mock/schema'
 
 describe('validateNode — rules', () => {
   it('valid rule returns no errors', () => {
@@ -106,5 +106,26 @@ describe('validateNode — groups', () => {
       ],
     })
     expect(validateNode(outer, usersSchema)).toEqual([])
+  })
+})
+
+describe('validateNode — relational fields', () => {
+  it('valid relational field path returns no errors', () => {
+    const rule = makeRule({ field: 'customer.status', operator: 'equals', value: 'active' })
+    expect(validateNode(rule, ordersSchema)).toEqual([])
+  })
+
+  it('invalid operator on relational field returns error', () => {
+    const rule = makeRule({ field: 'customer.status', operator: 'greaterThan', value: '10' })
+    const errors = validateNode(rule, ordersSchema)
+    expect(errors.length).toBeGreaterThan(0)
+    expect(errors[0]).toMatch(/not allowed/)
+  })
+
+  it('invalid relational path returns error', () => {
+    const rule = makeRule({ field: 'customer.nonExistent', operator: 'equals', value: 'active' })
+    const errors = validateNode(rule, ordersSchema)
+    expect(errors.length).toBeGreaterThan(0)
+    expect(errors[0]).toMatch(/does not exist/)
   })
 })

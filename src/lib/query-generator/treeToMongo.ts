@@ -1,5 +1,6 @@
 import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
-
+import { getFieldMetadata } from '@/lib/schemaUtils';
+import { schemas as defaultSchemas } from '@/lib/mock/schema';
 
 function coerceValue(value: unknown, fieldType: string): unknown {
   if (fieldType === 'number') return Number(value);
@@ -7,8 +8,8 @@ function coerceValue(value: unknown, fieldType: string): unknown {
   return value;
 }
 
-function ruleToMongo(rule: Rule, schema: Schema): Record<string, unknown> {
-  const schemaField = schema.fields.find((f) => f.name === rule.field);
+function ruleToMongo(rule: Rule, schema: Schema, schemas: Schema[]): Record<string, unknown> {
+  const schemaField = getFieldMetadata(rule.field, schema, schemas);
   const fieldType = schemaField?.type ?? 'string';
   const val = coerceValue(rule.value, fieldType);
 
@@ -63,27 +64,33 @@ function ruleToMongo(rule: Rule, schema: Schema): Record<string, unknown> {
   }
 }
 
-
-function groupToMongo(group: RuleGroup, schema: Schema): Record<string, unknown> {
+function groupToMongo(group: RuleGroup, schema: Schema, schemas: Schema[]): Record<string, unknown> {
   if (group.children.length === 0) return {};
 
-  const parts = group.children.map((child) => nodeToMongo(child, schema));
+  const parts = group.children.map((child) => nodeToMongo(child, schema, schemas));
   const op = group.logicalOperator === 'AND' ? '$and' : '$or';
   return { [op]: parts };
 }
 
-function nodeToMongo(node: QueryNode, schema: Schema): Record<string, unknown> {
-  if (node.type === 'rule') return ruleToMongo(node, schema);
-  return groupToMongo(node, schema);
+function nodeToMongo(node: QueryNode, schema: Schema, schemas: Schema[]): Record<string, unknown> {
+  if (node.type === 'rule') return ruleToMongo(node, schema, schemas);
+  return groupToMongo(node, schema, schemas);
 }
 
-
-export function treeToMongo(root: RuleGroup, schema: Schema): Record<string, unknown> {
+export function treeToMongo(
+  root: RuleGroup,
+  schema: Schema,
+  schemas: Schema[] = defaultSchemas
+): Record<string, unknown> {
   if (root.children.length === 0) return {};
-  return groupToMongo(root, schema);
+  return groupToMongo(root, schema, schemas);
 }
 
-export function treeToMongoString(root: RuleGroup, schema: Schema): string {
-  const filter = treeToMongo(root, schema);
+export function treeToMongoString(
+  root: RuleGroup,
+  schema: Schema,
+  schemas: Schema[] = defaultSchemas
+): string {
+  const filter = treeToMongo(root, schema, schemas);
   return `db.${schema.name.toLowerCase()}.find(\n${JSON.stringify(filter, null, 2)}\n)`;
 }

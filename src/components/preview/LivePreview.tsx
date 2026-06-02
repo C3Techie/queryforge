@@ -128,7 +128,7 @@ export function LivePreview() {
     <div
       className={cn(
         "border-t border-border bg-surface-container-lowest shrink-0 flex flex-col transition-all duration-300",
-        collapsed ? "h-10" : "h-full md:h-48"
+        collapsed ? "h-10" : "h-full lg:h-48"
       )}
     >
       {/* Tab bar */}
@@ -164,7 +164,7 @@ export function LivePreview() {
 
       {/* Code block */}
       {!collapsed && (
-        <div className="flex-1 overflow-auto bg-surface-dim shadow-inner relative group">
+        <div className="flex-1 overflow-auto no-scrollbar bg-surface-dim shadow-inner relative group">
           <pre className="p-4 m-0 font-code-md text-code-md text-on-surface leading-relaxed whitespace-pre-wrap break-words">
             {highlighted}
           </pre>

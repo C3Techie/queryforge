@@ -13,7 +13,7 @@ interface MobileNavProps {
 
 export function MobileNav({ activeTab, onTabChange }: MobileNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant dark:border-outline z-40 flex items-center justify-around md:hidden shadow-lg transition-colors duration-200">
+    <div className="fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant dark:border-outline z-40 flex items-center justify-around lg:hidden shadow-lg transition-colors duration-200">
 
       <button
         onClick={() => onTabChange("builder")}

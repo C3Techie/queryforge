@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useMemo, useCallback } from "react"
 import { GripVertical, X } from "lucide-react"
+import { motion } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -16,6 +17,8 @@ import { validateNode } from "@/lib/validation/validateNode"
 import { useQueryStore } from "@/store/queryStore"
 import type { Rule, Schema, Operator } from "@/types/query"
 import { cn } from "@/lib/utils"
+import { schemas } from "@/lib/mock/schema"
+import { getSelectableFields, getFieldMetadata } from "@/lib/schemaUtils"
 
 interface RuleRowProps {
   rule: Rule
@@ -35,7 +38,7 @@ function ValueInput({
   schema: Schema
   onUpdate: (id: string, updates: Partial<Rule>) => void
 }) {
-  const schemaField = schema.fields.find((f) => f.name === rule.field)
+  const schemaField = getFieldMetadata(rule.field, schema, schemas)
   const noValue = rule.operator === "isNull" || rule.operator === "isNotNull"
 
   if (!schemaField || noValue) return null
@@ -176,13 +179,14 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   const isSelected = selectedNodeId === rule.id
 
   const errors = useMemo(
-    () => (rule.field ? validateNode(rule, schema) : []),
+    () => (rule.field ? validateNode(rule, schema, schemas) : []),
     [rule, schema]
   )
 
   const hasErrors = errors.length > 0
 
-  const schemaField = schema.fields.find((f) => f.name === rule.field)
+  const selectableFields = useMemo(() => getSelectableFields(schema, schemas), [schema])
+  const schemaField = useMemo(() => getFieldMetadata(rule.field, schema, schemas), [rule.field, schema])
   const allowedOperators = schemaField
     ? OPERATOR_MAP[schemaField.type]
     : (Object.keys(OPERATOR_LABELS) as Operator[])
@@ -190,12 +194,12 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   const handleFieldChange = useCallback(
     (field: string | null) => {
       if (!field) return
-      const newSchemaField = schema.fields.find((f) => f.name === field)
+      const newSchemaField = getFieldMetadata(field, schema, schemas)
       const newAllowed = newSchemaField ? OPERATOR_MAP[newSchemaField.type] : []
       const newOperator = newAllowed[0] ?? "equals"
       onUpdate(rule.id, { field, operator: newOperator, value: "" })
     },
-    [rule.id, schema.fields, onUpdate]
+    [rule.id, schema, onUpdate]
   )
 
   const handleOperatorChange = useCallback(
@@ -207,12 +211,17 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
   )
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       onClick={() => setSelectedNodeId(rule.id)}
       className={cn(
-        "group animate-slide-down-fade",
+        "group",
         "flex flex-col gap-1",
-        "bg-surface-bright border rounded p-2 transition-all duration-200",
+        "bg-surface-bright border rounded p-2 transition-[box-shadow,border-color] duration-200",
         "hover:bg-surface-container-high hover:shadow-[0_-2px_0_0_theme(colors.primary)]",
         "cursor-pointer",
         isSelected && "ring-2 ring-primary ring-offset-1",
@@ -220,21 +229,21 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
       )}
     >
       {/* Controls row */}
-      <div className="flex flex-col md:flex-row md:items-center gap-2">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-2">
         {/* Drag handle — injected from SortableItem */}
         {dragHandle ?? (
-          <GripVertical className="hidden md:block size-4 text-muted-foreground cursor-move shrink-0" />
+          <GripVertical className="hidden lg:block size-4 text-muted-foreground cursor-move shrink-0" />
         )}
 
         {/* Field selector */}
         <Select value={rule.field} onValueChange={handleFieldChange}>
-          <SelectTrigger className="w-full md:w-32 h-8 shrink-0">
+          <SelectTrigger className="w-full md:w-52 h-8 shrink-0">
             <SelectValue placeholder="Field…" />
           </SelectTrigger>
           <SelectContent>
-            {schema.fields.map((f) => (
-              <SelectItem key={f.name} value={f.name}>
-                {f.name}
+            {selectableFields.map((f) => (
+              <SelectItem key={f.path} value={f.path}>
+                {f.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -287,7 +296,7 @@ function RuleRowInner({ rule, schema, dragHandle, onUpdate, onRemove }: RuleRowP
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 

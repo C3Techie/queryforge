@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Sun, Moon, Command, Upload, Download } from "lucide-react"
@@ -10,7 +11,7 @@ import { ShortcutsModal } from "@/components/shortcuts/ShortcutsModal"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
 import { useQueryStore } from "@/store/queryStore"
 import { useToast } from "@/components/ui/toast"
-import { TOGGLE_DARK_MODE_EVENT } from "@/lib/constants"
+import { TOGGLE_DARK_MODE_EVENT, TRIGGER_IMPORT_EVENT } from "@/lib/constants"
 
 export function Header() {
   const [isDark, setIsDark] = useState(
@@ -85,6 +86,13 @@ export function Header() {
     return () => window.removeEventListener(TOGGLE_DARK_MODE_EVENT, handler)
   }, [toggleDarkMode])
 
+  // Ctrl+I triggers the file import picker
+  useEffect(() => {
+    const handler = () => handleImportClick()
+    window.addEventListener(TRIGGER_IMPORT_EVENT, handler)
+    return () => window.removeEventListener(TRIGGER_IMPORT_EVENT, handler)
+  }, [handleImportClick])
+
   useKeyboardShortcuts({ onToggleShortcutsModal: toggleShortcutsModal })
 
   return (
@@ -108,7 +116,7 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest cursor-pointer h-9 w-9 rounded-full"
+                  className="lg:hidden text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest cursor-pointer h-9 w-9 rounded-full"
                   aria-label="Open Sidebar Menu"
                 />
               }
@@ -120,9 +128,13 @@ export function Header() {
             </SheetContent>
           </Sheet>
 
-          <span className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg md:text-xl">
+          {/* Logo — click to refresh page, on mobile also resets to builder tab */}
+          <Link
+            href="/"
+            className="font-display text-display font-black text-primary dark:text-primary-fixed-dim tracking-tight select-none text-lg lg:text-xl cursor-pointer hover:opacity-80 transition-opacity"
+          >
             QueryForge
-          </span>
+          </Link>
         </div>
 
         {/* Right Side */}

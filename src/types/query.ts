@@ -38,9 +38,17 @@ export interface SchemaField {
   options?: string[];
 }
 
+export interface SchemaRelation {
+  name: string;
+  targetSchema: string;
+  localField: string;
+  foreignField: string;
+}
+
 export interface Schema {
   name: string;
   fields: SchemaField[];
+  relations?: SchemaRelation[];
 }
 
 

@@ -4,6 +4,7 @@ import { current } from 'immer';
 import { v4 as uuidv4 } from 'uuid';
 import type { Rule, RuleGroup, QueryNode, Schema, HistoryEntry, Preset } from '@/types/query';
 import { MAX_HISTORY, MAX_PRESETS } from '@/lib/constants';
+import { schemas } from '@/lib/mock/schema';
 
 
 interface QueryState {
@@ -26,6 +27,7 @@ interface QueryState {
   importTree: (tree: RuleGroup) => void;
   exportTree: () => RuleGroup;
   setSelectedNodeId: (id: string | null) => void;
+  clearQuery: () => void;
 
   // Query history actions
   addHistoryEntry: () => void;
@@ -210,6 +212,14 @@ export const useQueryStore = create<QueryState>()(
       set((state) => { state.selectedNodeId = id; });
     },
 
+    clearQuery() {
+      set((state) => {
+        pushUndoStack(state);
+        state.queryTree = makeEmptyGroup();
+        state.selectedNodeId = null;
+      });
+    },
+
 
     addHistoryEntry() {
       set((state) => {
@@ -233,6 +243,10 @@ export const useQueryStore = create<QueryState>()(
     restoreFromHistory(id) {
       const entry = get().queryHistory.find((h) => h.id === id);
       if (!entry) return;
+      if (entry.schemaName) {
+        const sch = schemas.find((s) => s.name === entry.schemaName);
+        if (sch) set((state) => { state.schema = sch; });
+      }
       get().importTree(entry.tree);
     },
 
@@ -264,6 +278,10 @@ export const useQueryStore = create<QueryState>()(
     loadPreset(id) {
       const preset = get().presets.find((p) => p.id === id);
       if (!preset) return;
+      if (preset.schemaName) {
+        const sch = schemas.find((s) => s.name === preset.schemaName);
+        if (sch) set((state) => { state.schema = sch; });
+      }
       get().importTree(preset.tree);
     },
 
