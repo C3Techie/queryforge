@@ -2,7 +2,7 @@ import type { FieldType } from '@/types/query';
 
 /** Human-readable column label (e.g. createdAt → Created at). */
 export function formatFieldLabel(fieldName: string): string {
-  const spaced = fieldName.replace(/([A-Z])/g, ' $1').trim();
+  const spaced = fieldName.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
