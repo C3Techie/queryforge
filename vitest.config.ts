@@ -15,9 +15,8 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 1,
     fileParallelism: false,
-    // Vitest 4 pool rework: pool options are now top-level.
-    singleFork: true,
-    isolate: true,
+    // Reuse one worker process across files to minimize worker spawn timeouts.
+    isolate: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
