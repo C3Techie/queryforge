@@ -53,6 +53,20 @@ describe('treeToMongo', () => {
     expect(result.$and[0].email.$regex).toBe('^alice')
   })
 
+  it('escapes regex metacharacters for contains and startsWith', () => {
+    const containsRoot = makeGroup({
+      children: [makeRule({ field: 'name', operator: 'contains', value: 'a+b?' })],
+    })
+    const startsWithRoot = makeGroup({
+      children: [makeRule({ field: 'name', operator: 'startsWith', value: '(admin)' })],
+    })
+    const containsResult = treeToMongo(containsRoot, usersSchema) as { $and: { name: { $regex: string } }[] }
+    const startsWithResult = treeToMongo(startsWithRoot, usersSchema) as { $and: { name: { $regex: string } }[] }
+
+    expect(containsResult.$and[0].name.$regex).toBe('a\\+b\\?')
+    expect(startsWithResult.$and[0].name.$regex).toBe('^\\(admin\\)')
+  })
+
   it('inArray rule produces $in array', () => {
     const root = makeGroup({
       children: [makeRule({ field: 'status', operator: 'inArray', value: 'active, pending' })],
@@ -131,5 +145,14 @@ describe('treeToMongo', () => {
     })
     const result = treeToMongo(root, usersSchema) as { $and: { createdAt: { $lt: string } }[] }
     expect(result.$and[0].createdAt.$lt).toBe('2024-01-01')
+  })
+
+  it('returns fail-closed filter for unsafe field paths', () => {
+    const root = makeGroup({
+      children: [makeRule({ field: 'name;drop table users', operator: 'equals', value: 'x' })],
+    })
+    expect(treeToMongo(root, usersSchema)).toEqual({
+      $and: [{ $expr: { $eq: [1, 0] } }],
+    })
   })
 })

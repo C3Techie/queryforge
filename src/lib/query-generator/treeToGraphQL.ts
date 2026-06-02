@@ -1,6 +1,7 @@
 import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
 import { getFieldMetadata } from '@/lib/schemaUtils';
 import { schemas as defaultSchemas } from '@/lib/mock/schema';
+import { isAllowedOperatorForField, sanitizeFieldPath } from '@/lib/querySafety';
 
 function coerceValue(value: unknown, fieldType: string): unknown {
   if (fieldType === 'number') return Number(value);
@@ -22,8 +23,14 @@ function buildNestedFilter(fieldPath: string, filterVal: unknown): Record<string
 }
 
 function ruleToGQL(rule: Rule, schema: Schema, schemas: Schema[]): Record<string, unknown> {
-  const schemaField = getFieldMetadata(rule.field, schema, schemas);
+  const safeFieldPath = sanitizeFieldPath(rule.field);
+  if (!safeFieldPath) return { _invalid: true };
+
+  const schemaField = getFieldMetadata(safeFieldPath, schema, schemas);
   const fieldType = schemaField?.type ?? 'string';
+  if (!schemaField || !isAllowedOperatorForField(safeFieldPath, rule.operator, schema, schemas)) {
+    return { _invalid: true };
+  }
   const val = coerceValue(rule.value, fieldType);
   let filterVal: unknown;
 
@@ -90,7 +97,7 @@ function ruleToGQL(rule: Rule, schema: Schema, schemas: Schema[]): Record<string
       filterVal = {};
   }
 
-  return buildNestedFilter(rule.field, filterVal);
+  return buildNestedFilter(safeFieldPath, filterVal);
 }
 
 function groupToGQL(group: RuleGroup, schema: Schema, schemas: Schema[]): Record<string, unknown> {

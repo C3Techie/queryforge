@@ -1,24 +1,30 @@
 import type { QueryNode, Rule, RuleGroup, Schema } from '@/types/query';
 import { getFieldMetadata, getReferencedFields } from '@/lib/schemaUtils';
 import { schemas as defaultSchemas } from '@/lib/mock/schema';
-
-function escapeString(value: string): string {
-  return value.replace(/'/g, "''");
-}
+import {
+  escapeSqlString,
+  isAllowedOperatorForField,
+  sanitizeFieldPath,
+  toSafeSqlIdentifier,
+} from '@/lib/querySafety';
 
 function formatValue(value: unknown, fieldType: string): string {
   if (value === null || value === undefined) return 'NULL';
   if (fieldType === 'number') return String(Number(value));
   if (fieldType === 'boolean') return String(value) === 'true' ? '1' : '0';
-  return `'${escapeString(String(value))}'`;
+  return `'${escapeSqlString(String(value))}'`;
 }
 
 function ruleToSQL(rule: Rule, schema: Schema, schemas: Schema[]): string {
-  const field = rule.field.includes('.')
-    ? rule.field.split('.').map(p => `\`${p}\``).join('.')
-    : `\`${rule.field}\``;
-  const schemaField = getFieldMetadata(rule.field, schema, schemas);
+  const safeFieldPath = sanitizeFieldPath(rule.field);
+  if (!safeFieldPath) return '1=0';
+
+  const field = toSafeSqlIdentifier(safeFieldPath);
+  const schemaField = getFieldMetadata(safeFieldPath, schema, schemas);
   const fieldType = schemaField?.type ?? 'string';
+  if (!schemaField || !isAllowedOperatorForField(safeFieldPath, rule.operator, schema, schemas)) {
+    return '1=0';
+  }
   const rawValue = rule.value;
 
   switch (rule.operator) {
@@ -29,10 +35,10 @@ function ruleToSQL(rule: Rule, schema: Schema, schemas: Schema[]): string {
       return `${field} != ${formatValue(rawValue, fieldType)}`;
 
     case 'contains':
-      return `${field} LIKE '%${escapeString(String(rawValue))}%'`;
+      return `${field} LIKE '%${escapeSqlString(String(rawValue))}%'`;
 
     case 'startsWith':
-      return `${field} LIKE '${escapeString(String(rawValue))}%'`;
+      return `${field} LIKE '${escapeSqlString(String(rawValue))}%'`;
 
     case 'greaterThan':
       return `${field} > ${formatValue(rawValue, fieldType)}`;
@@ -68,7 +74,7 @@ function ruleToSQL(rule: Rule, schema: Schema, schemas: Schema[]): string {
       return `${field} > ${formatValue(rawValue, 'date')}`;
 
     case 'regex':
-      return `${field} REGEXP '${escapeString(String(rawValue))}'`;
+      return `${field} REGEXP '${escapeSqlString(String(rawValue))}'`;
 
     default:
       return '1=1';
