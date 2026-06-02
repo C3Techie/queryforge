@@ -10,12 +10,12 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
-    // In this environment, worker startup can intermittently timeout.
-    // Force tests to run in a single worker to avoid unhandled pool errors.
-    pool: 'forks',
+    // In this environment, child_process worker startup can timeout.
+    // Use a single threads worker for better Windows stability.
+    pool: 'threads',
     maxWorkers: 1,
     fileParallelism: false,
-    // Reuse one worker process across files to minimize worker spawn timeouts.
+    // Reuse one worker context across files to minimize worker startup churn.
     isolate: false,
     coverage: {
       provider: 'v8',
