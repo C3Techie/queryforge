@@ -1,10 +1,12 @@
 import { z } from 'zod'
-import type { Operator, RuleGroup, Schema } from '@/types/query'
+import type { Operator, QueryNode, RuleGroup, Schema } from '@/types/query'
 import { OPERATOR_MAP } from '@/lib/constants'
 import { getFieldMetadata } from '@/lib/schemaUtils'
 import { schemas as defaultSchemas } from '@/lib/mock/schema'
 
 const FIELD_PATH_SEGMENT_REGEX = /^[A-Za-z_][A-Za-z0-9_]*$/
+const MAX_QUERY_TREE_DEPTH = 20
+const MAX_QUERY_TREE_NODES = 500
 
 const ruleSchema: z.ZodType = z.lazy(() =>
   z.object({
@@ -57,7 +59,40 @@ export function parseImportedTree(input: unknown):
   if (!result.success) {
     return { success: false, error: 'Invalid query tree shape. Ensure all groups/rules are well-formed.' }
   }
-  return { success: true, data: result.data as RuleGroup }
+
+  const root = result.data as RuleGroup
+  const stack: Array<{ node: QueryNode; depth: number }> = [{ node: root, depth: 1 }]
+  let nodeCount = 0
+
+  while (stack.length > 0) {
+    const item = stack.pop()
+    if (!item) break
+
+    const { node, depth } = item
+    nodeCount += 1
+
+    if (nodeCount > MAX_QUERY_TREE_NODES) {
+      return {
+        success: false,
+        error: `Query tree is too large. Maximum node count is ${MAX_QUERY_TREE_NODES}.`,
+      }
+    }
+
+    if (depth > MAX_QUERY_TREE_DEPTH) {
+      return {
+        success: false,
+        error: `Query tree is too deep. Maximum depth is ${MAX_QUERY_TREE_DEPTH} levels.`,
+      }
+    }
+
+    if (node.type === 'group') {
+      for (const child of node.children) {
+        stack.push({ node: child, depth: depth + 1 })
+      }
+    }
+  }
+
+  return { success: true, data: root }
 }
 
 export function sanitizeFieldPath(fieldPath: string): string | null {

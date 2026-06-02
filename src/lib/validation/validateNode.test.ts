@@ -58,6 +58,22 @@ describe('validateNode — rules', () => {
     expect(errors.length).toBeGreaterThan(0)
     expect(errors[0]).toMatch(/not allowed/)
   })
+
+  it('rejects invalid date value for date field', () => {
+    const rule = makeRule({ field: 'createdAt', operator: 'before', value: 'not-a-date' })
+    const errors = validateNode(rule, usersSchema)
+    expect(errors.some((e) => /not a valid date/.test(e))).toBe(true)
+  })
+
+  it('rejects invalid date range ordering for between', () => {
+    const rule = makeRule({
+      field: 'createdAt',
+      operator: 'between',
+      value: ['2025-12-31', '2024-01-01'],
+    })
+    const errors = validateNode(rule, usersSchema)
+    expect(errors.some((e) => /start date must be before end date/.test(e))).toBe(true)
+  })
 })
 
 describe('validateNode — groups', () => {

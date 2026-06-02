@@ -10,9 +10,9 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
-    // In this environment, child_process worker startup can timeout.
-    // Use a single threads worker for better Windows stability.
-    pool: 'threads',
+    // In this environment, regular worker pools can fail to start reliably.
+    // vmThreads has been more resilient in Windows+Git Bash setups.
+    pool: 'vmThreads',
     maxWorkers: 1,
     fileParallelism: false,
     // Reuse one worker context across files to minimize worker startup churn.
